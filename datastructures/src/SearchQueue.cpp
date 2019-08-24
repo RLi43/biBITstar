@@ -699,26 +699,29 @@ namespace ompl
         {
             ASSERT_SETUP
 
-            bool rval;
-
             // Can it ever be a better solution? Less-than-equal to just in case we're using an edge that is exactly
             // optimally connected
             // g^(v) + c^(v,x) + h^(x) <= g_t(x_g)?
-            rval = costHelpPtr_->isCostBetterThanOrEquivalentTo(costHelpPtr_->lowerBoundHeuristicEdge(edge),
-                                                                solnCost_);
+            if(! costHelpPtr_->isCostBetterThanOrEquivalentTo(costHelpPtr_->lowerBoundHeuristicEdge(edge),
+                                                                solnCost_)){
+                                                                    return false;
+                                                                }
 
-            // If the child is connected already, we need to check if we could do better than it's current connection.
-            // But only if we're inserting the edge
-            if (edge.second->hasParent() && rval)
-            {
-                // Can it ever be a better path to the vertex? Less-than-equal to just in case we're using an edge that
-                // is exactly optimally connected
-                // g^(v) + c^(v,x) <= g_t(x)?
-                rval = costHelpPtr_->isCostBetterThanOrEquivalentTo(costHelpPtr_->lowerBoundHeuristicToTarget(edge),
-                                                                    edge.second->getCost());  // Ever rewire?
+            if (edge.second->isInTree()){
+                if(edge.first->isGtree() == edge.second->isGtree()){
+                    // rewire
+                    if(!costHelpPtr_->isCostBetterThanOrEquivalentTo(costHelpPtr_->lowerBoundHeuristicToTarget(edge),
+                                                                    edge.second->getCost()))  // Ever rewire?
+                                                                    {
+                                                                        return false;
+                                                                    }
+                }
+                else{
+                    // a conn edge
+                }
             }
-
-            return rval;
+            // else: free sample
+            return true;
         }
 
         bool biBITstar::SearchQueue::vertexPruneCondition(const VertexPtr &state) const
@@ -747,27 +750,26 @@ namespace ompl
         bool biBITstar::SearchQueue::edgePruneCondition(const VertexPtrPair &edge) const
         {
             ASSERT_SETUP
-
-            bool rval;
-            // Threshold should always be g_t(x_g)
-
-            // Prune the edge if it could cannot part of a better solution in the current graph.  Greater-than just in
-            // case we're using an edge that is exactly optimally connected.
-            // g_t(v) + c^(v,x) + h^(x) > g_t(x_g)?
-            rval = costHelpPtr_->isCostWorseThan(costHelpPtr_->currentHeuristicEdge(edge), solnCost_);
-
-            // If the child is connected already, we need to check if we could do better than it's current connection.
-            // But only if we're not pruning based on the first check
-            if (edge.second->hasParent() && !rval)
-            {
-                // Can it ever be a better path to the vertex in the current graph? Greater-than to just in case we're
-                // using an edge that is exactly optimally connected
-                // g_t(v) + c^(v,x) > g_t(x)?
-                rval = costHelpPtr_->isCostWorseThan(costHelpPtr_->currentHeuristicToTarget(edge),
-                                                     edge.second->getCost());  // Currently rewire?
+            if( costHelpPtr_->isCostWorseThan(costHelpPtr_->currentHeuristicEdge(edge), solnCost_)){
+                return true;
             }
 
-            return rval;
+            if (edge.second->isInTree()){
+                if(edge.first->isGtree() == edge.second->isGtree()){
+                    // rewire
+                    if(!costHelpPtr_->isCostWorseThan(costHelpPtr_->currentHeuristicToTarget(edge),
+                                                     edge.second->getCost()))  // Ever rewire?
+                                                    {
+                                                        return true;
+                                                    }
+                }
+                else{
+                    // a conn edge
+                    // TODO prune condition
+                }
+            }
+            // else: free sample
+            return false;
         }
 
         unsigned int biBITstar::SearchQueue::numEdges()

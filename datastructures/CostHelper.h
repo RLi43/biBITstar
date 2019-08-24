@@ -109,9 +109,14 @@ namespace ompl
             /** \brief Calculates a heuristic estimate of the cost of a solution constrained to pass through a vertex,
              * dependent on the current cost-to-come. I.e., combines the current cost-to-come with a heuristic estimate
              * of the cost-to-go. */
-            inline ompl::base::Cost currentHeuristicVertex(const VertexConstPtr &vertex) const
+            inline ompl::base::Cost currentHeuristicVertex(const VertexConstPtr &ver) const
             {
-                return this->combineCosts(vertex->getCost(), this->costToGoHeuristic(vertex));
+                //return this->combineCosts(vertex->getCost(), this->costToGoHeuristic(vertex));
+                const VertexPtr vertex = std::make_shared<biBITstar::Vertex>(*ver);
+                VertexPtr nearest = graphPtr_->nearestVertex(vertex,!vertex->isGtree());
+                return this->combineCosts(vertex->getCost(),
+                                            this->motionCostHeuristic(vertex->stateConst(),nearest->stateConst()),
+                                            nearest->getCost());
             };
 
             /** \brief Calculates a heuristic estimate of the cost of a solution constrained to go through an edge,
@@ -128,8 +133,12 @@ namespace ompl
              * estimates of the edge cost, and cost-to-go. */
             inline ompl::base::Cost currentHeuristicEdge(const VertexConstPtrPair &edgePair) const
             {
+                const VertexPtr vertex = std::make_shared<biBITstar::Vertex>(*edgePair.second);
+                VertexPtr nearest = graphPtr_->nearestVertex(vertex,!vertex->isGtree());
                 return this->combineCosts(this->currentHeuristicToTarget(edgePair),
-                                          this->costToGoHeuristic(edgePair.second));
+                                            this->motionCostHeuristic(vertex->stateConst(), nearest->stateConst()),
+                                            nearest->getCost());
+                                          //this->costToGoHeuristic(edgePair.second));
             };
 
             /** \brief Calculates a heuristic estimate of the cost of a path to the \e target of an edge, independent of
@@ -165,7 +174,9 @@ namespace ompl
                 // }
 
                 // Return
-                return this->motionCostHeuristic(graphPtr_->startVertex_->stateConst(),vertex->stateConst());
+                if(vertex->isGtree())
+                    return this->motionCostHeuristic(graphPtr_->startVertex_->stateConst(),vertex->stateConst());
+                return this->motionCostHeuristic(graphPtr_->goalVertex_->stateConst(),vertex->stateConst());
             };
 
             /** \brief Calculate a heuristic estimate of the cost of an edge between two Vertices */
@@ -191,7 +202,9 @@ namespace ompl
                 // }
 
                 // Return
-                return motionCostHeuristic(vertex->stateConst(),graphPtr_->goalVertex_->stateConst());
+                if (vertex->isGtree())
+                    return motionCostHeuristic(vertex->stateConst(),graphPtr_->goalVertex_->stateConst());
+                return motionCostHeuristic(vertex->stateConst(),graphPtr_->startVertex_->stateConst());
             };
             //////////////////
 
