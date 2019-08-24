@@ -153,19 +153,19 @@ namespace ompl
             {
                 // Variable
                 // The current best cost to the state, initialize to infinity
-                ompl::base::Cost curBest = this->infiniteCost();
+                // ompl::base::Cost curBest = this->infiniteCost();
 
-                // Iterate over the vector of starts, finding the minimum estimated cost-to-come to the state
-                for (auto startIter = graphPtr_->startVerticesBeginConst(); startIter != graphPtr_->startVerticesEndConst();
-                     ++startIter)
-                {
-                    // Update the cost-to-come as the better of the best so far and the new one
-                    curBest = this->betterCost(curBest,
-                                               this->motionCostHeuristic((*startIter)->stateConst(), vertex->stateConst()));
-                }
+                // // Iterate over the vector of starts, finding the minimum estimated cost-to-come to the state
+                // for (auto startIter = graphPtr_->startVerticesBeginConst(); startIter != graphPtr_->startVerticesEndConst();
+                //      ++startIter)
+                // {
+                //     // Update the cost-to-come as the better of the best so far and the new one
+                //     curBest = this->betterCost(curBest,
+                //                                this->motionCostHeuristic((*startIter)->stateConst(), vertex->stateConst()));
+                // }
 
                 // Return
-                return curBest;
+                return this->motionCostHeuristic(graphPtr_->startVertex_->stateConst(),vertex->stateConst());
             };
 
             /** \brief Calculate a heuristic estimate of the cost of an edge between two Vertices */
@@ -179,19 +179,19 @@ namespace ompl
             {
                 // Variable
                 // The current best cost to a goal from the state, initialize to infinity
-                ompl::base::Cost curBest = this->infiniteCost();
+                // ompl::base::Cost curBest = this->infiniteCost();
 
-                // Iterate over the vector of goals, finding the minimum estimated cost-to-go from the state
-                for (auto goalIter = graphPtr_->goalVerticesBeginConst(); goalIter != graphPtr_->goalVerticesEndConst();
-                     ++goalIter)
-                {
-                    // Update the cost-to-go as the better of the best so far and the new one
-                    curBest = this->betterCost(curBest,
-                                               this->motionCostHeuristic(vertex->stateConst(), (*goalIter)->stateConst()));
-                }
+                // // Iterate over the vector of goals, finding the minimum estimated cost-to-go from the state
+                // for (auto goalIter = graphPtr_->goalVerticesBeginConst(); goalIter != graphPtr_->goalVerticesEndConst();
+                //      ++goalIter)
+                // {
+                //     // Update the cost-to-go as the better of the best so far and the new one
+                //     curBest = this->betterCost(curBest,
+                //                                this->motionCostHeuristic(vertex->stateConst(), (*goalIter)->stateConst()));
+                // }
 
                 // Return
-                return curBest;
+                return motionCostHeuristic(vertex->stateConst(),graphPtr_->goalVertex_->stateConst());
             };
             //////////////////
 

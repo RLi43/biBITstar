@@ -1021,17 +1021,17 @@ namespace ompl
                 graphPtr_->nearestSamples(vertex, &neighbourSamples);
                 // Add edges to unconnected targets who could ever provide a better solution:
                 // Has the vertex been expanded into edges towards unconnected samples before?
-                if (!vertex->hasBeenExpandedToSamples())
-                {
-                    // It has not, that means none of its outgoing edges have been considered. Add them all
+                // if (!vertex->hasBeenExpandedToSamples())
+                // {
+                //     // It has not, that means none of its outgoing edges have been considered. Add them all
+                //     this->enqueueSamples(vertex, neighbourSamples);
+                // }
+                // else
+                // {
+                //     // It has, which means that outgoing edges to old unconnected vertices have already been considered.
+                //     // Only add those that lead to new vertices
                     this->enqueueSamples(vertex, neighbourSamples);
-                }
-                else
-                {
-                    // It has, which means that outgoing edges to old unconnected vertices have already been considered.
-                    // Only add those that lead to new vertices
-                    this->enqueueSamples(vertex, neighbourSamples);
-                }
+                //}
                 /// expand to another tree
                 if(!vertex->hasBeenExpandedToAnotherTree()){
                     VertexPtrVector anotherTreeVertices;
@@ -1081,7 +1081,7 @@ namespace ompl
 
         void biBITstar::SearchQueue::enqueueSamples(const VertexPtr &vertex, const VertexPtrVector& neighbourSamples)
         {
-            bool addAll = vertex->hasBeenExpandedToSamples;
+            bool addAll = vertex->hasBeenExpandedToSamples();
             // Iterate through the samples and add each one
             for (auto &targetSample : neighbourSamples)
             {

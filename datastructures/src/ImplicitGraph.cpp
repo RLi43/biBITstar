@@ -364,7 +364,7 @@ namespace ompl
             }
             else
             {
-                OMPL_ERROR("Doesn't supprot R-d tree right now.");
+                throw ompl::Exception("Doesn't supprot R-d tree right now.");
                 //vertexNN_->nearestR(vertex, r_, *neighbourVertices);
             }
         }
@@ -478,8 +478,8 @@ namespace ompl
 
             // Variable
             // Whether we've added a start or goal:
-            bool addedGoal = false;
-            bool addedStart = false;
+            // bool addedGoal = false;
+            // bool addedStart = false;
             // Whether we have to rebuid the queue, i.e.. whether we've called updateStartAndGoalStates before
             //bool rebuildQueue = false;
 
@@ -515,7 +515,7 @@ namespace ompl
                     //this->addSample(goalVertex_);
 
                     // Mark that we've added:
-                    addedGoal = true;
+                    //addedGoal = true;
                 }
                 // No else, there was no goal.
             //} while (pis.haveMoreGoalStates());
@@ -543,7 +543,7 @@ namespace ompl
                     si_->copyState(startVertex_->state(), newStart);
 
                     // Mark that we've added:
-                    addedStart = true;
+                    //addedStart = true;
                 }
                 // No else, there was no start.
             //}
