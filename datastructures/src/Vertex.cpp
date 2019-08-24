@@ -77,12 +77,13 @@ namespace ompl
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Public functions:
         biBITstar::Vertex::Vertex(ompl::base::SpaceInformationPtr si, const CostHelper *const costHelpPtr,
-                                bool root /*= false*/)
+                                bool root /*= false*/, bool isG /*= true */)
           : vId_(getIdGenerator().getNewId())
           , si_(std::move(si))
           , costHelpPtr_(std::move(costHelpPtr))
           , state_(si_->allocState())
           , isRoot_(root)
+          , isGtree_(isG)
           , edgeCost_(costHelpPtr_->infiniteCost())
           , cost_(costHelpPtr_->infiniteCost())
         {

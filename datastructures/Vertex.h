@@ -83,7 +83,7 @@ namespace ompl
             ////////////////////////////////////////////////////
             // Public functions:
             /** \brief Constructor */
-            Vertex(ompl::base::SpaceInformationPtr si, const CostHelper *const costHelpPtr, bool root = false);
+            Vertex(ompl::base::SpaceInformationPtr si, const CostHelper *const costHelpPtr, bool root = false, bool isGtree = true);
 
             /** \brief Destructor */
             virtual ~Vertex();
@@ -108,6 +108,12 @@ namespace ompl
             /** \brief Get whether a vertex is "in the graph" or not. This returns true if the vertex is the graph root
              * or is connected to a parent. */
             bool isInTree() const;
+
+            /////
+            bool isGtree() const;
+            bool isConn2Another() const;
+            void markAsConn2Another(bool conn = true);
+            ////
 
             /** \brief Get the "depth" of the vertex from the root. A root vertex is at depth 0, a direct descendent of
              * the root 1, etc. */
@@ -278,6 +284,10 @@ namespace ompl
 
             /** \brief Whether the vertex is a root */
             bool isRoot_;
+
+            /////
+            bool isGtree_;
+            bool isConn2_{false};
 
             /** \brief Whether the vertex is new. */
             bool isNew_{true};
