@@ -35,7 +35,7 @@
 /* Authors: Jonathan Gammell */
 
 // My definition:
-#include "ompl/geometric/planners/bitstar/datastructures/ImplicitGraph.h"
+#include "../ImplicitGraph.h"
 
 // STL/Boost:
 // For std::move
@@ -61,21 +61,21 @@
 
 // BIT*:
 // A collection of common helper functions
-#include "ompl/geometric/planners/bitstar/datastructures/HelperFunctions.h"
+#include "../HelperFunctions.h"
 // The vertex class:
-#include "ompl/geometric/planners/bitstar/datastructures/Vertex.h"
+#include "../Vertex.h"
 // The cost-helper class:
-#include "ompl/geometric/planners/bitstar/datastructures/CostHelper.h"
+#include "../CostHelper.h"
 // The search queue class
-#include "ompl/geometric/planners/bitstar/datastructures/SearchQueue.h"
+#include "../SearchQueue.h"
 
 // Debug macros
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
     /** \brief A debug-only call to assert that the object is setup. */
     #define ASSERT_SETUP this->assertSetup();
 #else
     #define ASSERT_SETUP
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
 namespace ompl
 {
@@ -83,12 +83,12 @@ namespace ompl
     {
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Public functions:
-        BITstar::ImplicitGraph::ImplicitGraph(NameFunc nameFunc)
+        biBITstar::ImplicitGraph::ImplicitGraph(NameFunc nameFunc)
           : nameFunc_(std::move(nameFunc))
         {
         }
 
-        void BITstar::ImplicitGraph::setup(const ompl::base::SpaceInformationPtr &si,
+        void biBITstar::ImplicitGraph::setup(const ompl::base::SpaceInformationPtr &si,
                                            const ompl::base::ProblemDefinitionPtr &pdef,
                                            CostHelper *costHelper, SearchQueue *searchQueue,
                                            const ompl::base::Planner *plannerPtr, ompl::base::PlannerInputStates &pis)
@@ -195,7 +195,7 @@ namespace ompl
             r_ = std::numeric_limits<double>::infinity();
         }
 
-        void BITstar::ImplicitGraph::clear()
+        void biBITstar::ImplicitGraph::clear()
         {
             // Reset everything to the state of construction OTHER than planner name and settings/parameters
             // Keep this in the order of the constructors for easy verification:
@@ -268,11 +268,11 @@ namespace ompl
             // findApprox_
         }
 
-        double BITstar::ImplicitGraph::distanceFunction(const VertexConstPtr &a, const VertexConstPtr &b) const
+        double biBITstar::ImplicitGraph::distanceFunction(const VertexConstPtr &a, const VertexConstPtr &b) const
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (static_cast<bool>(a->stateConst()) == false)
             {
                 throw ompl::Exception("a->state is unallocated");
@@ -281,7 +281,7 @@ namespace ompl
             {
                 throw ompl::Exception("b->state is unallocated");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Using RRTstar as an example, this order gives us the distance FROM the queried state TO the other
             // neighbours in the structure.
@@ -289,7 +289,7 @@ namespace ompl
             return si_->distance(b->stateConst(), a->stateConst());
         }
 
-        void BITstar::ImplicitGraph::nearestSamples(const VertexPtr &vertex, VertexPtrVector *neighbourSamples)
+        void biBITstar::ImplicitGraph::nearestSamples(const VertexPtr &vertex, VertexPtrVector *neighbourSamples)
         {
             ASSERT_SETUP
 
@@ -309,7 +309,7 @@ namespace ompl
             }
         }
 
-        void BITstar::ImplicitGraph::nearestVertices(const VertexPtr &vertex, VertexPtrVector *neighbourVertices)
+        void biBITstar::ImplicitGraph::nearestVertices(const VertexPtr &vertex, VertexPtrVector *neighbourVertices)
         {
             ASSERT_SETUP
 
@@ -326,7 +326,7 @@ namespace ompl
             }
         }
 
-        void BITstar::ImplicitGraph::getGraphAsPlannerData(ompl::base::PlannerData &data) const
+        void biBITstar::ImplicitGraph::getGraphAsPlannerData(ompl::base::PlannerData &data) const
         {
             ASSERT_SETUP
 
@@ -382,7 +382,7 @@ namespace ompl
             // No else.
         }
 
-        void BITstar::ImplicitGraph::hasSolution(const ompl::base::Cost &solnCost)
+        void biBITstar::ImplicitGraph::hasSolution(const ompl::base::Cost &solnCost)
         {
             ASSERT_SETUP
 
@@ -397,7 +397,7 @@ namespace ompl
             closestVertexToGoal_.reset();
         }
 
-        void BITstar::ImplicitGraph::updateStartAndGoalStates(ompl::base::PlannerInputStates &pis,
+        void biBITstar::ImplicitGraph::updateStartAndGoalStates(ompl::base::PlannerInputStates &pis,
                                                               const base::PlannerTerminationCondition &ptc)
         {
             ASSERT_SETUP
@@ -655,7 +655,7 @@ namespace ompl
             // No else
         }
 
-        void BITstar::ImplicitGraph::addNewSamples(const unsigned int &numSamples)
+        void biBITstar::ImplicitGraph::addNewSamples(const unsigned int &numSamples)
         {
             ASSERT_SETUP
 
@@ -700,16 +700,16 @@ namespace ompl
             // We don't add actual *new* samples until the next time "nearestSamples" is called. This is to support JIT sampling.
         }
 
-        std::pair<unsigned int, unsigned int> BITstar::ImplicitGraph::prune(double prunedMeasure)
+        std::pair<unsigned int, unsigned int> biBITstar::ImplicitGraph::prune(double prunedMeasure)
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (hasExactSolution_ == false)
             {
                 throw ompl::Exception("A graph cannot be pruned until a solution is found");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Variable
             std::pair<unsigned int, unsigned int> numPruned(0u, 0u);
@@ -726,16 +726,16 @@ namespace ompl
             return numPruned;
         }
 
-        void BITstar::ImplicitGraph::addSample(const VertexPtr &newSample)
+        void biBITstar::ImplicitGraph::addSample(const VertexPtr &newSample)
         {
             ASSERT_SETUP
 
             // NO COUNTER. generated samples are counted at the sampler.
 
             // Assert the state of the sample
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             this->assertValidSample(newSample, true);
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Add to the vector of new samples
             newSamples_.push_back(newSample);
@@ -744,20 +744,20 @@ namespace ompl
             freeStateNN_->add(newSample);
         }
 
-        void BITstar::ImplicitGraph::removeSample(const VertexPtr &oldSample)
+        void biBITstar::ImplicitGraph::removeSample(const VertexPtr &oldSample)
         {
             ASSERT_SETUP
 
             // Variable:
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // The use count of the passed shared pointer. Used in debug mode to assert that we took ownership of our own copy.
             unsigned int initCount = oldSample.use_count();
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
             // A copy of the sample pointer to be removed so we can't delete it out from under ourselves (occurs when
             // this function is given an element of the maintained set as the argument)
             VertexPtr sampleToDelete(oldSample);
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that the vertexToDelete took it's own copy
             if (sampleToDelete.use_count() <= initCount)
             {
@@ -765,7 +765,7 @@ namespace ompl
                                       "from taking it's own copy of the given shared pointer. See "
                                       "https://bitbucket.org/ompl/ompl/issues/364/code-cleanup-breaking-bit");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Increment our counter
             ++numFreeStatesPruned_;
@@ -777,18 +777,18 @@ namespace ompl
             sampleToDelete->markPruned();
         }
 
-        void BITstar::ImplicitGraph::addVertex(const VertexPtr &newVertex, bool removeFromFree)
+        void biBITstar::ImplicitGraph::addVertex(const VertexPtr &newVertex, bool removeFromFree)
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Make sure it's connected first, so that the queue gets updated properly.
             // This is a day of debugging I'll never get back
             if (newVertex->isInTree() == false)
             {
                 throw ompl::Exception("Vertices must be connected to the graph before adding");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Increment the number of vertices added:
             ++numVertices_;
@@ -810,20 +810,20 @@ namespace ompl
             }
         }
 
-        unsigned int BITstar::ImplicitGraph::removeVertex(const VertexPtr &oldVertex, bool moveToFree)
+        unsigned int biBITstar::ImplicitGraph::removeVertex(const VertexPtr &oldVertex, bool moveToFree)
         {
             ASSERT_SETUP
 
             // Variable:
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // The use count of the passed shared pointer. Used in debug mode to assert that we took ownership of our own copy.
             unsigned int initCount = oldVertex.use_count();
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
             // A copy of the vertex pointer to be removed so we can't delete it out from under ourselves (occurs when
             // this function is given an element of the maintained set as the argument)
             VertexPtr vertexToDelete(oldVertex);
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that the vertexToDelete took it's own copy
             if (vertexToDelete.use_count() <= initCount)
             {
@@ -831,7 +831,7 @@ namespace ompl
                                       "from taking it's own copy of the given shared pointer. See "
                                       "https://bitbucket.org/ompl/ompl/issues/364/code-cleanup-breaking-bit");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Increment our counter
             ++numVerticesDisconnected_;
@@ -860,7 +860,7 @@ namespace ompl
             }
         }
 
-        void BITstar::ImplicitGraph::assertValidSample(const VertexConstPtr &sample, bool mustBeNew)
+        void biBITstar::ImplicitGraph::assertValidSample(const VertexConstPtr &sample, bool mustBeNew)
         {
             if (sample->isRoot())
             {
@@ -902,7 +902,7 @@ namespace ompl
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Private functions:
-        void BITstar::ImplicitGraph::updateSamples(const VertexConstPtr &vertex)
+        void biBITstar::ImplicitGraph::updateSamples(const VertexConstPtr &vertex)
         {
             // Variable
             // The required cost to contain the neighbourhood of this vertex:
@@ -980,7 +980,7 @@ namespace ompl
             // No else, the samples are up to date
         }
 
-        void BITstar::ImplicitGraph::findVertexClosestToGoal()
+        void biBITstar::ImplicitGraph::findVertexClosestToGoal()
         {
             if (static_cast<bool>(vertexNN_))
             {
@@ -1000,7 +1000,7 @@ namespace ompl
             // No else, I do nothing.
         }
 
-        std::pair<unsigned int, unsigned int> BITstar::ImplicitGraph::pruneStartsGoals()
+        std::pair<unsigned int, unsigned int> biBITstar::ImplicitGraph::pruneStartsGoals()
         {
             // Variable
             // The number of starts/goals disconnected from the tree/pruned
@@ -1146,7 +1146,7 @@ namespace ompl
             return numPruned;
         }
 
-        unsigned int BITstar::ImplicitGraph::pruneSamples()
+        unsigned int biBITstar::ImplicitGraph::pruneSamples()
         {
             // Variable:
             // The number of samples pruned in this pass:
@@ -1195,7 +1195,7 @@ namespace ompl
             return numPruned;
         }
 
-        void BITstar::ImplicitGraph::testClosestToGoal(const VertexConstPtr &newVertex)
+        void biBITstar::ImplicitGraph::testClosestToGoal(const VertexConstPtr &newVertex)
         {
             // Variable
             // The distance from this vertex to the goal:
@@ -1214,7 +1214,7 @@ namespace ompl
             // No else, don't update if worse
         }
 
-        ompl::base::Cost BITstar::ImplicitGraph::neighbourhoodCost(const VertexConstPtr &vertex) const
+        ompl::base::Cost biBITstar::ImplicitGraph::neighbourhoodCost(const VertexConstPtr &vertex) const
         {
             // Are we using JIT sampling?
             if (useJustInTimeSampling_)
@@ -1232,7 +1232,7 @@ namespace ompl
             return maxCost_;
         }
 
-        void BITstar::ImplicitGraph::updateNearestTerms()
+        void biBITstar::ImplicitGraph::updateNearestTerms()
         {
             // Variables:
             // The number of uniformly distributed states:
@@ -1270,7 +1270,7 @@ namespace ompl
             }
         }
 
-        double BITstar::ImplicitGraph::calculateR(unsigned int N) const
+        double biBITstar::ImplicitGraph::calculateR(unsigned int N) const
         {
             // Variables
             // The dimension cast as a double for readibility;
@@ -1282,13 +1282,13 @@ namespace ompl
             return rewireFactor_ * this->minimumRggR() * std::pow(std::log(cardDbl) / cardDbl, 1 / dimDbl);
         }
 
-        unsigned int BITstar::ImplicitGraph::calculateK(unsigned int N) const
+        unsigned int biBITstar::ImplicitGraph::calculateK(unsigned int N) const
         {
             // Calculate the term and return
             return std::ceil(rewireFactor_ * k_rgg_ * std::log(static_cast<double>(N)));
         }
 
-        double BITstar::ImplicitGraph::minimumRggR() const
+        double biBITstar::ImplicitGraph::minimumRggR() const
         {
             // Variables
             // The dimension cast as a double for readibility;
@@ -1326,7 +1326,7 @@ namespace ompl
             */
         }
 
-        double BITstar::ImplicitGraph::minimumRggK() const
+        double biBITstar::ImplicitGraph::minimumRggK() const
         {
             // Variables
             // The dimension cast as a double for readibility;
@@ -1337,107 +1337,107 @@ namespace ompl
                    (boost::math::constants::e<double>() / dimDbl);  // RRG k-nearest
         }
 
-        void BITstar::ImplicitGraph::assertSetup() const
+        void biBITstar::ImplicitGraph::assertSetup() const
         {
             if (isSetup_ == false)
             {
-                throw ompl::Exception("BITstar::ImplicitGraph was used before it was setup.");
+                throw ompl::Exception("biBITstar::ImplicitGraph was used before it was setup.");
             }
         }
         /////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Boring sets/gets (Public):
-        bool BITstar::ImplicitGraph::hasAStart() const
+        bool biBITstar::ImplicitGraph::hasAStart() const
         {
             return (!startVertices_.empty());
         }
 
-        bool BITstar::ImplicitGraph::hasAGoal() const
+        bool biBITstar::ImplicitGraph::hasAGoal() const
         {
             return (!goalVertices_.empty());
         }
 
-        BITstar::VertexPtrVector::const_iterator BITstar::ImplicitGraph::startVerticesBeginConst() const
+        biBITstar::VertexPtrVector::const_iterator biBITstar::ImplicitGraph::startVerticesBeginConst() const
         {
             return startVertices_.cbegin();
         }
 
-        BITstar::VertexPtrVector::const_iterator BITstar::ImplicitGraph::startVerticesEndConst() const
+        biBITstar::VertexPtrVector::const_iterator biBITstar::ImplicitGraph::startVerticesEndConst() const
         {
             return startVertices_.cend();
         }
 
-        BITstar::VertexPtrVector::const_iterator BITstar::ImplicitGraph::goalVerticesBeginConst() const
+        biBITstar::VertexPtrVector::const_iterator biBITstar::ImplicitGraph::goalVerticesBeginConst() const
         {
             return goalVertices_.cbegin();
         }
 
-        BITstar::VertexPtrVector::const_iterator BITstar::ImplicitGraph::goalVerticesEndConst() const
+        biBITstar::VertexPtrVector::const_iterator biBITstar::ImplicitGraph::goalVerticesEndConst() const
         {
             return goalVertices_.cend();
         }
 
-        ompl::base::Cost BITstar::ImplicitGraph::minCost() const
+        ompl::base::Cost biBITstar::ImplicitGraph::minCost() const
         {
             return minCost_;
         }
 
-        bool BITstar::ImplicitGraph::hasInformedMeasure() const
+        bool biBITstar::ImplicitGraph::hasInformedMeasure() const
         {
             return sampler_->hasInformedMeasure();
         }
 
-        double BITstar::ImplicitGraph::getInformedMeasure(const ompl::base::Cost &cost) const
+        double biBITstar::ImplicitGraph::getInformedMeasure(const ompl::base::Cost &cost) const
         {
             return sampler_->getInformedMeasure(cost);
         }
 
-        BITstar::VertexConstPtr BITstar::ImplicitGraph::closestVertexToGoal() const
+        biBITstar::VertexConstPtr biBITstar::ImplicitGraph::closestVertexToGoal() const
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (findApprox_ == false)
             {
                 throw ompl::Exception("Approximate solutions are not being tracked.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
             return closestVertexToGoal_;
         }
 
-        double BITstar::ImplicitGraph::smallestDistanceToGoal() const
+        double biBITstar::ImplicitGraph::smallestDistanceToGoal() const
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (findApprox_ == false)
             {
                 throw ompl::Exception("Approximate solutions are not being tracked.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
             return closestDistToGoal_;
         }
 
-        unsigned int BITstar::ImplicitGraph::getConnectivityK() const
+        unsigned int biBITstar::ImplicitGraph::getConnectivityK() const
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (useKNearest_ == false)
             {
                 throw ompl::Exception("Using an r-disc graph.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
             return k_;
         }
 
-        double BITstar::ImplicitGraph::getConnectivityR() const
+        double biBITstar::ImplicitGraph::getConnectivityR() const
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (useKNearest_ == true)
             {
                 throw ompl::Exception("Using a k-nearest graph.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
             return r_;
         }
 
-        void BITstar::ImplicitGraph::setRewireFactor(double rewireFactor)
+        void biBITstar::ImplicitGraph::setRewireFactor(double rewireFactor)
         {
             // Store
             rewireFactor_ = rewireFactor;
@@ -1450,12 +1450,12 @@ namespace ompl
             }
         }
 
-        double BITstar::ImplicitGraph::getRewireFactor() const
+        double biBITstar::ImplicitGraph::getRewireFactor() const
         {
             return rewireFactor_;
         }
 
-        void BITstar::ImplicitGraph::setUseKNearest(bool useKNearest)
+        void biBITstar::ImplicitGraph::setUseKNearest(bool useKNearest)
         {
             // Assure that we're not trying to enable k-nearest with JIT sampling already on
             if (useKNearest && useJustInTimeSampling_)
@@ -1478,12 +1478,12 @@ namespace ompl
             }
         }
 
-        bool BITstar::ImplicitGraph::getUseKNearest() const
+        bool biBITstar::ImplicitGraph::getUseKNearest() const
         {
             return useKNearest_;
         }
 
-        void BITstar::ImplicitGraph::setJustInTimeSampling(bool useJit)
+        void biBITstar::ImplicitGraph::setJustInTimeSampling(bool useJit)
         {
             // Assure that we're not trying to enable k-nearest with JIT sampling already on
             if (useKNearest_ && useJit)
@@ -1508,12 +1508,12 @@ namespace ompl
             }
         }
 
-        bool BITstar::ImplicitGraph::getJustInTimeSampling() const
+        bool biBITstar::ImplicitGraph::getJustInTimeSampling() const
         {
             return useJustInTimeSampling_;
         }
 
-        void BITstar::ImplicitGraph::setDropSamplesOnPrune(bool dropSamples)
+        void biBITstar::ImplicitGraph::setDropSamplesOnPrune(bool dropSamples)
         {
             // Make sure we're not already setup
             if (isSetup_)
@@ -1529,12 +1529,12 @@ namespace ompl
             }
         }
 
-        bool BITstar::ImplicitGraph::getDropSamplesOnPrune() const
+        bool biBITstar::ImplicitGraph::getDropSamplesOnPrune() const
         {
             return dropSamplesOnPrune_;
         }
 
-        void BITstar::ImplicitGraph::setTrackApproximateSolutions(bool findApproximate)
+        void biBITstar::ImplicitGraph::setTrackApproximateSolutions(bool findApproximate)
         {
             // Is the flag changing?
             if (findApproximate != findApprox_)
@@ -1563,13 +1563,13 @@ namespace ompl
             // No else, no change.
         }
 
-        bool BITstar::ImplicitGraph::getTrackApproximateSolutions() const
+        bool biBITstar::ImplicitGraph::getTrackApproximateSolutions() const
         {
             return findApprox_;
         }
 
         template <template <typename T> class NN>
-        void BITstar::ImplicitGraph::setNearestNeighbors()
+        void biBITstar::ImplicitGraph::setNearestNeighbors()
         {
             // Check if the problem is already setup, if so, the NN structs have data in them and you can't really
             // change them:
@@ -1587,42 +1587,42 @@ namespace ompl
             }
         }
 
-        unsigned int BITstar::ImplicitGraph::numFreeSamples() const
+        unsigned int biBITstar::ImplicitGraph::numFreeSamples() const
         {
             return freeStateNN_->size();
         }
 
-        unsigned int BITstar::ImplicitGraph::numConnectedVertices() const
+        unsigned int biBITstar::ImplicitGraph::numConnectedVertices() const
         {
             return vertexNN_->size();
         }
 
-        unsigned int BITstar::ImplicitGraph::numStatesGenerated() const
+        unsigned int biBITstar::ImplicitGraph::numStatesGenerated() const
         {
             return numSamples_;
         }
 
-        unsigned int BITstar::ImplicitGraph::numVerticesConnected() const
+        unsigned int biBITstar::ImplicitGraph::numVerticesConnected() const
         {
             return numVertices_;
         }
 
-        unsigned int BITstar::ImplicitGraph::numFreeStatesPruned() const
+        unsigned int biBITstar::ImplicitGraph::numFreeStatesPruned() const
         {
             return numFreeStatesPruned_;
         }
 
-        unsigned int BITstar::ImplicitGraph::numVerticesDisconnected() const
+        unsigned int biBITstar::ImplicitGraph::numVerticesDisconnected() const
         {
             return numVerticesDisconnected_;
         }
 
-        unsigned int BITstar::ImplicitGraph::numNearestLookups() const
+        unsigned int biBITstar::ImplicitGraph::numNearestLookups() const
         {
             return numNearestNeighbours_;
         }
 
-        unsigned int BITstar::ImplicitGraph::numStateCollisionChecks() const
+        unsigned int biBITstar::ImplicitGraph::numStateCollisionChecks() const
         {
             return numStateCollisionChecks_;
         }
