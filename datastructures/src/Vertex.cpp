@@ -35,7 +35,7 @@
 /* Authors: Jonathan Gammell */
 
 // My definition:
-#include "ompl/geometric/planners/bitstar/datastructures/Vertex.h"
+#include "../Vertex.h"
 
 // For std::move
 #include <utility>
@@ -45,15 +45,15 @@
 
 // BIT*:
 // A collection of common helper functions
-#include "ompl/geometric/planners/bitstar/datastructures/HelperFunctions.h"
+#include "../HelperFunctions.h"
 // The ID generator class
-#include "ompl/geometric/planners/bitstar/datastructures/IdGenerator.h"
+#include "../IdGenerator.h"
 // The cost-helper class:
-#include "ompl/geometric/planners/bitstar/datastructures/CostHelper.h"
+#include "../CostHelper.h"
 
 // Debug macros
-#ifdef BITSTAR_DEBUG
-    // Debug setting. The id number of a vertex to track. Requires BITSTAR_DEBUG to be defined in BITstar.h
+#ifdef BIBITSTAR_DEBUG
+    // Debug setting. The id number of a vertex to track. Requires BIBITSTAR_DEBUG to be defined in biBITstar.h
     #define TRACK_VERTEX_ID 0
 
     /** \brief A helper function to print out every function called on vertex "TRACK_VERTEX_ID" that changes it */
@@ -68,7 +68,7 @@
 #else
     #define PRINT_VERTEX_CHANGE
     #define ASSERT_NOT_PRUNED
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
 namespace ompl
 {
@@ -76,7 +76,7 @@ namespace ompl
     {
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Public functions:
-        BITstar::Vertex::Vertex(ompl::base::SpaceInformationPtr si, const CostHelper *const costHelpPtr,
+        biBITstar::Vertex::Vertex(ompl::base::SpaceInformationPtr si, const CostHelper *const costHelpPtr,
                                 bool root /*= false*/)
           : vId_(getIdGenerator().getNewId())
           , si_(std::move(si))
@@ -95,7 +95,7 @@ namespace ompl
             // No else, infinite by default
         }
 
-        BITstar::Vertex::~Vertex()
+        biBITstar::Vertex::~Vertex()
         {
             PRINT_VERTEX_CHANGE
 
@@ -103,21 +103,21 @@ namespace ompl
             si_->freeState(state_);
         }
 
-        BITstar::VertexId BITstar::Vertex::getId() const
+        biBITstar::VertexId biBITstar::Vertex::getId() const
         {
             ASSERT_NOT_PRUNED
 
             return vId_;
         }
 
-        ompl::base::State const *BITstar::Vertex::stateConst() const
+        ompl::base::State const *biBITstar::Vertex::stateConst() const
         {
             ASSERT_NOT_PRUNED
 
             return state_;
         }
 
-        ompl::base::State *BITstar::Vertex::state()
+        ompl::base::State *biBITstar::Vertex::state()
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -127,47 +127,47 @@ namespace ompl
 
         /////////////////////////////////////////////
         // The vertex's graph properties:
-        bool BITstar::Vertex::isRoot() const
+        bool biBITstar::Vertex::isRoot() const
         {
             ASSERT_NOT_PRUNED
 
             return isRoot_;
         }
 
-        bool BITstar::Vertex::hasParent() const
+        bool biBITstar::Vertex::hasParent() const
         {
             ASSERT_NOT_PRUNED
 
             return static_cast<bool>(parentSPtr_);
         }
 
-        bool BITstar::Vertex::isInTree() const
+        bool biBITstar::Vertex::isInTree() const
         {
             ASSERT_NOT_PRUNED
 
             return this->isRoot() || this->hasParent();
         }
 
-        unsigned int BITstar::Vertex::getDepth() const
+        unsigned int biBITstar::Vertex::getDepth() const
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->isRoot() == false && this->hasParent() == false)
             {
                 throw ompl::Exception("Attempting to get the depth of a vertex that does not have a parent yet is not "
                                       "root.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             return depth_;
         }
 
-        BITstar::VertexConstPtr BITstar::Vertex::getParentConst() const
+        biBITstar::VertexConstPtr biBITstar::Vertex::getParentConst() const
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->hasParent() == false)
             {
                 if (this->isRoot() == true)
@@ -179,16 +179,16 @@ namespace ompl
                     throw ompl::Exception("Attempting to access the parent of a vertex that does not have one.");
                 }
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             return parentSPtr_;
         }
 
-        BITstar::VertexPtr BITstar::Vertex::getParent()
+        biBITstar::VertexPtr biBITstar::Vertex::getParent()
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->hasParent() == false)
             {
                 if (this->isRoot() == true)
@@ -200,18 +200,18 @@ namespace ompl
                     throw ompl::Exception("Attempting to access the parent of a vertex that does not have one.");
                 }
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             return parentSPtr_;
         }
 
-        void BITstar::Vertex::addParent(const VertexPtr &newParent, const ompl::base::Cost &edgeInCost,
+        void biBITstar::Vertex::addParent(const VertexPtr &newParent, const ompl::base::Cost &edgeInCost,
                                         bool updateChildCosts)
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert I can take a parent
             if (this->isRoot() == true)
             {
@@ -221,7 +221,7 @@ namespace ompl
             {
                 throw ompl::Exception("Attempting to add a parent to a vertex that already has one.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Store the parent
             parentSPtr_ = newParent;
@@ -233,12 +233,12 @@ namespace ompl
             this->updateCostAndDepth(updateChildCosts);
         }
 
-        void BITstar::Vertex::removeParent(bool updateChildCosts)
+        void biBITstar::Vertex::removeParent(bool updateChildCosts)
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert I have a parent
             if (this->isRoot() == true)
             {
@@ -249,7 +249,7 @@ namespace ompl
             {
                 throw ompl::Exception("Attempting to remove the parent of a vertex that does not have a parent.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Clear my parent
             parentSPtr_.reset();
@@ -258,14 +258,14 @@ namespace ompl
             this->updateCostAndDepth(updateChildCosts);
         }
 
-        bool BITstar::Vertex::hasChildren() const
+        bool biBITstar::Vertex::hasChildren() const
         {
             ASSERT_NOT_PRUNED
 
             return !childWPtrs_.empty();
         }
 
-        void BITstar::Vertex::getChildrenConst(VertexConstPtrVector *children) const
+        void biBITstar::Vertex::getChildrenConst(VertexConstPtrVector *children) const
         {
             ASSERT_NOT_PRUNED
 
@@ -273,21 +273,21 @@ namespace ompl
 
             for (const auto &childWPtr : childWPtrs_)
             {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
                 // Check that the weak pointer hasn't expired
                 if (childWPtr.expired() == true)
                 {
                     throw ompl::Exception("A (weak) pointer to a child was found to have expired while collecting the "
                                           "children of a vertex.");
                 }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
                 // Lock and push back
                 children->push_back(childWPtr.lock());
             }
         }
 
-        void BITstar::Vertex::getChildren(VertexPtrVector *children)
+        void biBITstar::Vertex::getChildren(VertexPtrVector *children)
         {
             ASSERT_NOT_PRUNED
 
@@ -295,26 +295,26 @@ namespace ompl
 
             for (const auto &childWPtr : childWPtrs_)
             {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
                 // Check that the weak pointer hasn't expired
                 if (childWPtr.expired() == true)
                 {
                     throw ompl::Exception("A (weak) pointer to a child was found to have expired while collecting the "
                                           "children of a vertex.");
                 }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
                 // Lock and push back
                 children->push_back(childWPtr.lock());
             }
         }
 
-        void BITstar::Vertex::addChild(const VertexPtr &newChild)
+        void biBITstar::Vertex::addChild(const VertexPtr &newChild)
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that I am this child's parent
             if (newChild->isRoot())
             {
@@ -328,7 +328,7 @@ namespace ompl
             {
                 throw ompl::Exception("Attempted to add someone else's child as mine.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Push back the shared_ptr into the vector of weak_ptrs, this makes a weak_ptr copy
             childWPtrs_.push_back(newChild);
@@ -336,12 +336,12 @@ namespace ompl
             // Leave the costs of the child out of date.
         }
 
-        void BITstar::Vertex::removeChild(const VertexPtr &oldChild)
+        void biBITstar::Vertex::removeChild(const VertexPtr &oldChild)
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that I am this child's parent
             if (oldChild->isRoot())
             {
@@ -355,7 +355,7 @@ namespace ompl
             {
                 throw ompl::Exception("Attempted to remove a child vertex from the wrong parent.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Variables
             // Whether the child has been found (and then deleted);
@@ -366,14 +366,14 @@ namespace ompl
             for (auto childIter = childWPtrs_.begin(); childIter != childWPtrs_.end() && !foundChild;
                  ++childIter)
             {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
                 // Check that the weak pointer hasn't expired
                 if (childIter->expired() == true)
                 {
                     throw ompl::Exception("A (weak) pointer to a child was found to have expired while removing a "
                                           "child from a vertex.");
                 }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
                 // Check if this is the child we're looking for
                 if (childIter->lock()->getId() == oldChild->getId())
@@ -392,45 +392,45 @@ namespace ompl
 
             // Leave the costs of the child out of date.
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Throw if we did not find the child
             if (foundChild == false)
             {
                 throw ompl::Exception("Attempting to remove a child vertex not present in the vector of children "
                                       "stored in the (supposed) parent vertex.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
         }
 
-        ompl::base::Cost BITstar::Vertex::getCost() const
+        ompl::base::Cost biBITstar::Vertex::getCost() const
         {
             ASSERT_NOT_PRUNED
 
             return cost_;
         }
 
-        ompl::base::Cost BITstar::Vertex::getEdgeInCost() const
+        ompl::base::Cost biBITstar::Vertex::getEdgeInCost() const
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->hasParent() == false)
             {
                 throw ompl::Exception("Attempting to access the incoming-edge cost of a vertex without a parent.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             return edgeCost_;
         }
 
-        bool BITstar::Vertex::isNew() const
+        bool biBITstar::Vertex::isNew() const
         {
             ASSERT_NOT_PRUNED
 
             return isNew_;
         }
 
-        void BITstar::Vertex::markNew()
+        void biBITstar::Vertex::markNew()
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -438,7 +438,7 @@ namespace ompl
             isNew_ = true;
         }
 
-        void BITstar::Vertex::markOld()
+        void biBITstar::Vertex::markOld()
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -446,14 +446,14 @@ namespace ompl
             isNew_ = false;
         }
 
-        bool BITstar::Vertex::hasBeenExpandedToSamples() const
+        bool biBITstar::Vertex::hasBeenExpandedToSamples() const
         {
             ASSERT_NOT_PRUNED
 
             return hasBeenExpandedToSamples_;
         }
 
-        void BITstar::Vertex::markExpandedToSamples()
+        void biBITstar::Vertex::markExpandedToSamples()
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -461,7 +461,7 @@ namespace ompl
             hasBeenExpandedToSamples_ = true;
         }
 
-        void BITstar::Vertex::markUnexpandedToSamples()
+        void biBITstar::Vertex::markUnexpandedToSamples()
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -469,14 +469,14 @@ namespace ompl
             hasBeenExpandedToSamples_ = false;
         }
 
-        bool BITstar::Vertex::hasBeenExpandedToVertices() const
+        bool biBITstar::Vertex::hasBeenExpandedToVertices() const
         {
             ASSERT_NOT_PRUNED
 
             return hasBeenExpandedToVertices_;
         }
 
-        void BITstar::Vertex::markExpandedToVertices()
+        void biBITstar::Vertex::markExpandedToVertices()
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -484,7 +484,7 @@ namespace ompl
             hasBeenExpandedToVertices_ = true;
         }
 
-        void BITstar::Vertex::markUnexpandedToVertices()
+        void biBITstar::Vertex::markUnexpandedToVertices()
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -492,12 +492,12 @@ namespace ompl
             hasBeenExpandedToVertices_ = false;
         }
 
-        bool BITstar::Vertex::isPruned() const
+        bool biBITstar::Vertex::isPruned() const
         {
             return isPruned_;
         }
 
-        void BITstar::Vertex::markPruned()
+        void biBITstar::Vertex::markPruned()
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -505,7 +505,7 @@ namespace ompl
             isPruned_ = true;
         }
 
-        void BITstar::Vertex::markUnpruned()
+        void biBITstar::Vertex::markUnpruned()
         {
             PRINT_VERTEX_CHANGE
 
@@ -517,32 +517,32 @@ namespace ompl
         // Functions for the vertex's SearchQueue data
         /////////////////////////
         // Vertex queue info:
-        BITstar::SearchQueue::VertexQueueIter BITstar::Vertex::getVertexQueueIter() const
+        biBITstar::SearchQueue::VertexQueueIter biBITstar::Vertex::getVertexQueueIter() const
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert available
             if (isVertexQueueSet_ == false)
             {
                 throw ompl::Exception("Attempting to access an iterator to the vertex queue before one is set.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             return vertexQueueIter_;
         }
 
-        void BITstar::Vertex::setVertexQueueIter(const SearchQueue::VertexQueueIter& newPtr)
+        void biBITstar::Vertex::setVertexQueueIter(const SearchQueue::VertexQueueIter& newPtr)
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert not already set
             if (isVertexQueueSet_ == true)
             {
                 throw ompl::Exception("Attempting to change an iterator to the vertex queue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Record that it's set
             isVertexQueueSet_ = true;
@@ -551,7 +551,7 @@ namespace ompl
             vertexQueueIter_ = newPtr;
         }
 
-        void BITstar::Vertex::clearVertexQueueIter()
+        void biBITstar::Vertex::clearVertexQueueIter()
         {
             ASSERT_NOT_PRUNED
 
@@ -559,7 +559,7 @@ namespace ompl
             isVertexQueueSet_ = false;
         }
 
-        bool BITstar::Vertex::hasVertexQueueEntry() const
+        bool biBITstar::Vertex::hasVertexQueueEntry() const
         {
             ASSERT_NOT_PRUNED
 
@@ -569,14 +569,14 @@ namespace ompl
 
         /////////////////////////
         // Edge queue info (incoming edges):
-        void BITstar::Vertex::addIncomingEdgeQueuePtr(const SearchQueue::EdgeQueueElemPtr& newInPtr, unsigned int vertexQueueResetNum)
+        void biBITstar::Vertex::addIncomingEdgeQueuePtr(const SearchQueue::EdgeQueueElemPtr& newInPtr, unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
             // Conditionally clear any existing lookups
             this->clearOldLookups(vertexQueueResetNum);
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that this edge is NOT _from_ this vertex
             if (newInPtr->data.second.first->getId() == vId_)
             {
@@ -595,24 +595,24 @@ namespace ompl
                     throw ompl::Exception("Attempted to add a second edge to the queue from a single source vertex.");
                 }
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Push back
             edgeQueueInPtrs_.push_back(newInPtr);
         }
 
-        void BITstar::Vertex::rmIncomingEdgeQueuePtr(const SearchQueue::EdgeQueueElemPtr &elemToDelete, unsigned int vertexQueueResetNum)
+        void biBITstar::Vertex::rmIncomingEdgeQueuePtr(const SearchQueue::EdgeQueueElemPtr &elemToDelete, unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that the edge queue entries we have are of the same set as the one we're seeking to delete.
             // If so, there's no point clearing them, as then we'd be trying to remove an edge that doesn't exist which would be an error.
             if (vertexQueueResetNum != edgeLookupPass_)
             {
                 throw ompl::Exception("Attempted to remove an incoming queue edge added under a different expansion id.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Variable
             // Element found
@@ -633,40 +633,40 @@ namespace ompl
                 // No else, try the next
             }
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (!found)
             {
                 throw ompl::Exception("Attempted to remove an edge not in the incoming lookup.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
         }
 
-        void BITstar::Vertex::rmIncomingEdgeQueuePtrByIter(const SearchQueue::EdgeQueueElemPtrVector::const_iterator& constIterToDelete, unsigned int vertexQueueResetNum)
+        void biBITstar::Vertex::rmIncomingEdgeQueuePtrByIter(const SearchQueue::EdgeQueueElemPtrVector::const_iterator& constIterToDelete, unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that the edge queue entries we have are of the same set as the one we're seeking to delete.
             // If so, there's no point clearing them, as then we'd be trying to remove an edge that doesn't exist which would be an error.
             if (vertexQueueResetNum != edgeLookupPass_)
             {
                 throw ompl::Exception("Attempted to remove an incoming queue edge added under a different expansion id.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Remove a non-const version of the given iterator
             // (trick from https://stackoverflow.com/a/10669041/1442500)
             this->rmIncomingHelper(edgeQueueInPtrs_.erase(constIterToDelete, constIterToDelete));
         }
 
-        void BITstar::Vertex::clearIncomingEdgeQueuePtrs()
+        void biBITstar::Vertex::clearIncomingEdgeQueuePtrs()
         {
             ASSERT_NOT_PRUNED
 
             edgeQueueInPtrs_.clear();
         }
 
-        BITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator BITstar::Vertex::incomingEdgeQueuePtrsBeginConst(unsigned int vertexQueueResetNum)
+        biBITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator biBITstar::Vertex::incomingEdgeQueuePtrsBeginConst(unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
@@ -676,7 +676,7 @@ namespace ompl
             return edgeQueueInPtrs_.cbegin();
         }
 
-        BITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator BITstar::Vertex::incomingEdgeQueuePtrsEndConst(unsigned int vertexQueueResetNum)
+        biBITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator biBITstar::Vertex::incomingEdgeQueuePtrsEndConst(unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
@@ -686,7 +686,7 @@ namespace ompl
             return edgeQueueInPtrs_.cend();
         }
 
-        unsigned int BITstar::Vertex::getNumIncomingEdgeQueuePtrs(unsigned int vertexQueueResetNum)
+        unsigned int biBITstar::Vertex::getNumIncomingEdgeQueuePtrs(unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
@@ -696,7 +696,7 @@ namespace ompl
             return edgeQueueInPtrs_.size();
         }
 
-        bool BITstar::Vertex::hasIncomingEdgeQueueEntries(unsigned int vertexQueueResetNum)
+        bool biBITstar::Vertex::hasIncomingEdgeQueueEntries(unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
@@ -710,14 +710,14 @@ namespace ompl
 
         /////////////////////////
         // Edge queue info (outgoing edges):
-        void BITstar::Vertex::addOutgoingEdgeQueuePtr(const SearchQueue::EdgeQueueElemPtr& newOutPtr, unsigned int vertexQueueResetNum)
+        void biBITstar::Vertex::addOutgoingEdgeQueuePtr(const SearchQueue::EdgeQueueElemPtr& newOutPtr, unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
             // Conditionally clear any existing lookups
             this->clearOldLookups(vertexQueueResetNum);
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that this edge is _from_ this vertex
             if (newOutPtr->data.second.first->getId() != vId_)
             {
@@ -736,24 +736,24 @@ namespace ompl
                     throw ompl::Exception("Attempted to add a second edge to the queue to a single target vertex.");
                 }
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Push back
             edgeQueueOutPtrs_.push_back(newOutPtr);
         }
 
-        void BITstar::Vertex::rmOutgoingEdgeQueuePtr(const SearchQueue::EdgeQueueElemPtr &elemToDelete, unsigned int vertexQueueResetNum)
+        void biBITstar::Vertex::rmOutgoingEdgeQueuePtr(const SearchQueue::EdgeQueueElemPtr &elemToDelete, unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that the edge queue entries we have are of the same set as the one we're seeking to delete.
             // If so, there's no point clearing them, as then we'd be trying to remove an edge that doesn't exist which would be an error.
             if (vertexQueueResetNum != edgeLookupPass_)
             {
                 throw ompl::Exception("Attempted to remove an incoming queue edge added under a different expansion id.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Variable
             // Element found
@@ -774,40 +774,40 @@ namespace ompl
                 // No else, try the next
             }
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (!found)
             {
                 throw ompl::Exception("Attempted to remove an edge not in the outgoing lookup.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
         }
 
-        void BITstar::Vertex::rmOutgoingEdgeQueuePtrByIter(const SearchQueue::EdgeQueueElemPtrVector::const_iterator& constIterToDelete, unsigned int vertexQueueResetNum)
+        void biBITstar::Vertex::rmOutgoingEdgeQueuePtrByIter(const SearchQueue::EdgeQueueElemPtrVector::const_iterator& constIterToDelete, unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that the edge queue entries we have are of the same set as the one we're seeking to delete.
             // If so, there's no point clearing them, as then we'd be trying to remove an edge that doesn't exist which would be an error.
             if (vertexQueueResetNum != edgeLookupPass_)
             {
                 throw ompl::Exception("Attempted to remove an outgoing queue edge added under a different expansion id.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Remove a non-const version of the given iterator
             // (trick from https://stackoverflow.com/a/10669041/1442500)
             this->rmOutgoingHelper(edgeQueueOutPtrs_.erase(constIterToDelete, constIterToDelete));
         }
 
-        void BITstar::Vertex::clearOutgoingEdgeQueuePtrs()
+        void biBITstar::Vertex::clearOutgoingEdgeQueuePtrs()
         {
             ASSERT_NOT_PRUNED
 
             edgeQueueOutPtrs_.clear();
         }
 
-        BITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator BITstar::Vertex::outgoingEdgeQueuePtrsBeginConst(unsigned int vertexQueueResetNum)
+        biBITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator biBITstar::Vertex::outgoingEdgeQueuePtrsBeginConst(unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
@@ -817,7 +817,7 @@ namespace ompl
             return edgeQueueOutPtrs_.cbegin();
         }
 
-        BITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator BITstar::Vertex::outgoingEdgeQueuePtrsEndConst(unsigned int vertexQueueResetNum)
+        biBITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator biBITstar::Vertex::outgoingEdgeQueuePtrsEndConst(unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
@@ -827,7 +827,7 @@ namespace ompl
             return edgeQueueOutPtrs_.cend();
         }
 
-        unsigned int BITstar::Vertex::getNumOutgoingEdgeQueuePtrs(unsigned int vertexQueueResetNum)
+        unsigned int biBITstar::Vertex::getNumOutgoingEdgeQueuePtrs(unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
@@ -837,7 +837,7 @@ namespace ompl
             return edgeQueueOutPtrs_.size();
         }
 
-        bool BITstar::Vertex::hasOutgoingEdgeQueueEntries(unsigned int vertexQueueResetNum)
+        bool biBITstar::Vertex::hasOutgoingEdgeQueueEntries(unsigned int vertexQueueResetNum)
         {
             ASSERT_NOT_PRUNED
 
@@ -853,7 +853,7 @@ namespace ompl
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Protected functions:
-        void BITstar::Vertex::updateCostAndDepth(bool cascadeUpdates /*= true*/)
+        void biBITstar::Vertex::updateCostAndDepth(bool cascadeUpdates /*= true*/)
         {
             PRINT_VERTEX_CHANGE
             ASSERT_NOT_PRUNED
@@ -872,7 +872,7 @@ namespace ompl
                 // Set the depth to 0u, getDepth will throw in this condition
                 depth_ = 0u;
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
                 // Assert that I have not been asked to cascade this bad data to my children:
                 if (this->hasChildren() == true && cascadeUpdates == true)
                 {
@@ -880,7 +880,7 @@ namespace ompl
                                           "not have a parent and is not root. This information would therefore be "
                                           "gibberish.");
                 }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
             }
             else
             {
@@ -897,14 +897,14 @@ namespace ompl
                 // Now, iterate over my vector of children and tell each one to update its own damn cost:
                 for (auto &childWPtr : childWPtrs_)
                 {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
                     // Check that it hasn't expired
                     if (childWPtr.expired() == true)
                     {
                         throw ompl::Exception("A (weak) pointer to a child has was found to have expired while "
                                               "updating the costs and depths of descendant vertices.");
                     }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
                     // Get a lock and tell the child to update:
                     childWPtr.lock()->updateCostAndDepth(true);
@@ -917,9 +917,9 @@ namespace ompl
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Private functions:
 
-        void BITstar::Vertex::rmIncomingHelper(const SearchQueue::EdgeQueueElemPtrVector::iterator &iterToDelete)
+        void biBITstar::Vertex::rmIncomingHelper(const SearchQueue::EdgeQueueElemPtrVector::iterator &iterToDelete)
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Store the source id of the edge we're removing
             VertexId rmSrc = (*iterToDelete)->data.second.first->getId();
             // Assert that this edge is NOT _from_ this vertex
@@ -947,7 +947,7 @@ namespace ompl
             {
                 throw ompl::Exception("Attempted to remove an edge not in the incoming lookup.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Clear our entry in the list
             *iterToDelete = nullptr;
@@ -955,7 +955,7 @@ namespace ompl
             // Remove it efficiently
             swapPopBack(iterToDelete, &edgeQueueInPtrs_);
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that it's now gone.
             for (const auto &edgePtr : edgeQueueInPtrs_)
             {
@@ -964,12 +964,12 @@ namespace ompl
                     throw ompl::Exception("Failed to remove the designated edge in the incoming lookup.");
                 }
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
         }
 
-        void BITstar::Vertex::rmOutgoingHelper(const SearchQueue::EdgeQueueElemPtrVector::iterator &iterToDelete)
+        void biBITstar::Vertex::rmOutgoingHelper(const SearchQueue::EdgeQueueElemPtrVector::iterator &iterToDelete)
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Store the target id of the edge we're removing
             VertexId rmTrgt = (*iterToDelete)->data.second.second->getId();
             // Assert that this edge is _from_ this vertex
@@ -997,7 +997,7 @@ namespace ompl
             {
                 throw ompl::Exception("Attempted to remove an edge not in the outgoing lookup.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Clear our entry in the list
             *iterToDelete = nullptr;
@@ -1005,7 +1005,7 @@ namespace ompl
             // Remove it efficiently
             swapPopBack(iterToDelete, &edgeQueueOutPtrs_);
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that it's now gone.
             for (const auto &edgePtr : edgeQueueOutPtrs_)
             {
@@ -1014,10 +1014,10 @@ namespace ompl
                     throw ompl::Exception("Failed to remove the designated edge in the outgoing lookup.");
                 }
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
         }
 
-        void BITstar::Vertex::clearOldLookups(unsigned int vertexQueueResetNum)
+        void biBITstar::Vertex::clearOldLookups(unsigned int vertexQueueResetNum)
         {
             // Clean up any old lookups
             if (vertexQueueResetNum != edgeLookupPass_)
@@ -1032,7 +1032,7 @@ namespace ompl
             // No else, this is the same pass through the vertex queue
         }
 
-        void BITstar::Vertex::assertNotPruned() const
+        void biBITstar::Vertex::assertNotPruned() const
         {
             if (isPruned_ == true)
             {

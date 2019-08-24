@@ -35,7 +35,7 @@
 /* Authors: Jonathan Gammell */
 
 // My definition:
-#include "ompl/geometric/planners/bitstar/BITstar.h"
+#include "../biBITstar.h"
 
 // For stringstreams
 #include <sstream>
@@ -59,21 +59,21 @@
 
 // BIT*:
 // A collection of common helper functions
-#include "ompl/geometric/planners/bitstar/datastructures/HelperFunctions.h"
+#include "../datastructures/HelperFunctions.h"
 // The Vertex ID generator class
-#include "ompl/geometric/planners/bitstar/datastructures/IdGenerator.h"
+#include "../datastructures/IdGenerator.h"
 // My vertex class:
-#include "ompl/geometric/planners/bitstar/datastructures/Vertex.h"
+#include "../datastructures/Vertex.h"
 // My cost & heuristic helper class
-#include "ompl/geometric/planners/bitstar/datastructures/CostHelper.h"
+#include "../datastructures/CostHelper.h"
 // My implicit graph
-#include "ompl/geometric/planners/bitstar/datastructures/ImplicitGraph.h"
+#include "../datastructures/ImplicitGraph.h"
 // My queue class
-#include "ompl/geometric/planners/bitstar/datastructures/SearchQueue.h"
+#include "../datastructures/SearchQueue.h"
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
     #warning Compiling BIT* with debug-level asserts
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
 namespace ompl
 {
@@ -81,12 +81,12 @@ namespace ompl
     {
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Public functions:
-        BITstar::BITstar(const ompl::base::SpaceInformationPtr &si, const std::string &name /*= "BITstar"*/)
+        biBITstar::biBITstar(const ompl::base::SpaceInformationPtr &si, const std::string &name /*= "biBITstar"*/)
           : ompl::base::Planner(si, name)
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             OMPL_WARN("%s: Compiled with debug-level asserts.", Planner::getName().c_str());
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Allocate my helper classes, they hold settings and must never be deallocated. Give them a pointer to my
             // name, so they can output helpful error messages
@@ -102,15 +102,15 @@ namespace ompl
             queuePtr_->setPruneDuringResort(usePruning_);
 
             // Make sure the default name reflects the default k-nearest setting
-            if (graphPtr_->getUseKNearest() && Planner::getName() == "BITstar")
+            if (graphPtr_->getUseKNearest() && Planner::getName() == "biBITstar")
             {
                 // It's the current default r-disc BIT* name, but we're using k-nearest, so change
-                Planner::setName("kBITstar");
+                Planner::setName("kbiBITstar");
             }
-            else if (!graphPtr_->getUseKNearest() && Planner::getName() == "kBITstar")
+            else if (!graphPtr_->getUseKNearest() && Planner::getName() == "kbiBITstar")
             {
                 // It's the current default k-nearest BIT* name, but we're using r-disc, so change
-                Planner::setName("BITstar");
+                Planner::setName("biBITstar");
             }
             // It's not default named, don't change it
 
@@ -125,30 +125,30 @@ namespace ompl
             Planner::specs_.canReportIntermediateSolutions = true;
 
             // Register my setting callbacks
-            Planner::declareParam<double>("rewire_factor", this, &BITstar::setRewireFactor, &BITstar::getRewireFactor,
+            Planner::declareParam<double>("rewire_factor", this, &biBITstar::setRewireFactor, &biBITstar::getRewireFactor,
                                           "1.0:0.01:3.0");
-            Planner::declareParam<unsigned int>("samples_per_batch", this, &BITstar::setSamplesPerBatch,
-                                                &BITstar::getSamplesPerBatch, "1:1:1000000");
-            Planner::declareParam<bool>("use_k_nearest", this, &BITstar::setUseKNearest, &BITstar::getUseKNearest, "0,"
+            Planner::declareParam<unsigned int>("samples_per_batch", this, &biBITstar::setSamplesPerBatch,
+                                                &biBITstar::getSamplesPerBatch, "1:1:1000000");
+            Planner::declareParam<bool>("use_k_nearest", this, &biBITstar::setUseKNearest, &biBITstar::getUseKNearest, "0,"
                                                                                                                    "1");
-            Planner::declareParam<bool>("use_graphPtr_pruning", this, &BITstar::setPruning, &BITstar::getPruning, "0,"
+            Planner::declareParam<bool>("use_graphPtr_pruning", this, &biBITstar::setPruning, &biBITstar::getPruning, "0,"
                                                                                                                   "1");
             Planner::declareParam<double>("prune_threshold_as_fractional_cost_change", this,
-                                          &BITstar::setPruneThresholdFraction, &BITstar::getPruneThresholdFraction,
+                                          &biBITstar::setPruneThresholdFraction, &biBITstar::getPruneThresholdFraction,
                                           "0.0:0.01:1.0");
             Planner::declareParam<bool>("delay_rewiring_to_first_solution", this,
-                                        &BITstar::setDelayRewiringUntilInitialSolution,
-                                        &BITstar::getDelayRewiringUntilInitialSolution, "0,1");
-            Planner::declareParam<bool>("use_just_in_time_sampling", this, &BITstar::setJustInTimeSampling,
-                                        &BITstar::getJustInTimeSampling, "0,1");
-            Planner::declareParam<bool>("drop_unconnected_samples_on_prune", this, &BITstar::setDropSamplesOnPrune,
-                                        &BITstar::getDropSamplesOnPrune, "0,1");
-            Planner::declareParam<bool>("stop_on_each_solution_improvement", this, &BITstar::setStopOnSolnImprovement,
-                                        &BITstar::getStopOnSolnImprovement, "0,1");
-            Planner::declareParam<bool>("use_strict_queue_ordering", this, &BITstar::setStrictQueueOrdering,
-                                        &BITstar::getStrictQueueOrdering, "0,1");
-            Planner::declareParam<bool>("find_approximate_solutions", this, &BITstar::setConsiderApproximateSolutions,
-                                        &BITstar::getConsiderApproximateSolutions, "0,1");
+                                        &biBITstar::setDelayRewiringUntilInitialSolution,
+                                        &biBITstar::getDelayRewiringUntilInitialSolution, "0,1");
+            Planner::declareParam<bool>("use_just_in_time_sampling", this, &biBITstar::setJustInTimeSampling,
+                                        &biBITstar::getJustInTimeSampling, "0,1");
+            Planner::declareParam<bool>("drop_unconnected_samples_on_prune", this, &biBITstar::setDropSamplesOnPrune,
+                                        &biBITstar::getDropSamplesOnPrune, "0,1");
+            Planner::declareParam<bool>("stop_on_each_solution_improvement", this, &biBITstar::setStopOnSolnImprovement,
+                                        &biBITstar::getStopOnSolnImprovement, "0,1");
+            Planner::declareParam<bool>("use_strict_queue_ordering", this, &biBITstar::setStrictQueueOrdering,
+                                        &biBITstar::getStrictQueueOrdering, "0,1");
+            Planner::declareParam<bool>("find_approximate_solutions", this, &biBITstar::setConsiderApproximateSolutions,
+                                        &biBITstar::getConsiderApproximateSolutions, "0,1");
 
             // Register my progress info:
             addPlannerProgressProperty("best cost DOUBLE", [this]
@@ -225,7 +225,7 @@ namespace ompl
             */
         }
 
-        void BITstar::setup()
+        void biBITstar::setup()
         {
             // Call the base class setup. Marks Planner::setup_ as true.
             Planner::setup();
@@ -286,7 +286,7 @@ namespace ompl
             }
         }
 
-        void BITstar::clear()
+        void biBITstar::clear()
         {
             // Clear all the variables.
             // Keep this in the order of the constructors:
@@ -323,7 +323,7 @@ namespace ompl
             Planner::clear();
         }
 
-        ompl::base::PlannerStatus BITstar::solve(const ompl::base::PlannerTerminationCondition &ptc)
+        ompl::base::PlannerStatus biBITstar::solve(const ompl::base::PlannerTerminationCondition &ptc)
         {
             // Check that Planner::setup_ is true, if not call this->setup()
             Planner::checkValidity();
@@ -406,7 +406,7 @@ namespace ompl
                                              !hasExactSolution_ && graphPtr_->getTrackApproximateSolutions());
         }
 
-        void BITstar::getPlannerData(ompl::base::PlannerData &data) const
+        void biBITstar::getPlannerData(ompl::base::PlannerData &data) const
         {
             // Get the base planner class data:
             Planner::getPlannerData(data);
@@ -428,7 +428,7 @@ namespace ompl
             // No else, no solution
         }
 
-        std::pair<ompl::base::State const *, ompl::base::State const *> BITstar::getNextEdgeInQueue()
+        std::pair<ompl::base::State const *, ompl::base::State const *> biBITstar::getNextEdgeInQueue()
         {
             // Variable:
             // The next edge as a basic pair of states
@@ -452,7 +452,7 @@ namespace ompl
             return nextEdge;
         }
 
-        ompl::base::Cost BITstar::getNextEdgeValueInQueue()
+        ompl::base::Cost biBITstar::getNextEdgeValueInQueue()
         {
             // Variable
             // The cost of the next edge
@@ -472,27 +472,27 @@ namespace ompl
             return nextCost;
         }
 
-        void BITstar::getEdgeQueue(VertexConstPtrPairVector *edgesInQueue)
+        void biBITstar::getEdgeQueue(VertexConstPtrPairVector *edgesInQueue)
         {
             queuePtr_->getEdges(edgesInQueue);
         }
 
-        void BITstar::getVertexQueue(VertexConstPtrVector *verticesInQueue)
+        void biBITstar::getVertexQueue(VertexConstPtrVector *verticesInQueue)
         {
             queuePtr_->getVertices(verticesInQueue);
         }
 
-        unsigned int BITstar::numIterations() const
+        unsigned int biBITstar::numIterations() const
         {
             return numIterations_;
         }
 
-        ompl::base::Cost BITstar::bestCost() const
+        ompl::base::Cost biBITstar::bestCost() const
         {
             return bestCost_;
         }
 
-        unsigned int BITstar::numBatches() const
+        unsigned int biBITstar::numBatches() const
         {
             return numBatches_;
         }
@@ -500,7 +500,7 @@ namespace ompl
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Protected functions:
-        void BITstar::iterate()
+        void biBITstar::iterate()
         {
             // Info:
             ++numIterations_;
@@ -591,7 +591,7 @@ namespace ompl
             }  // Search queue not empty.
         }
 
-        void BITstar::newBatch()
+        void biBITstar::newBatch()
         {
             // Info:
             ++numBatches_;
@@ -614,7 +614,7 @@ namespace ompl
             graphPtr_->addNewSamples(samplesPerBatch_);
         }
 
-        void BITstar::prune()
+        void biBITstar::prune()
         {
             /* Test if we should we do a little tidying up:
               - Is pruning enabled?
@@ -669,7 +669,7 @@ namespace ompl
             // No else, why was I called?
         }
 
-        void BITstar::publishSolution()
+        void biBITstar::publishSolution()
         {
             // Variable
             // The reverse path of state pointers
@@ -705,7 +705,7 @@ namespace ompl
             Planner::pdef_->addSolutionPath(soln);
         }
 
-        std::vector<const ompl::base::State *> BITstar::bestPathFromGoalToStart() const
+        std::vector<const ompl::base::State *> biBITstar::bestPathFromGoalToStart() const
         {
             // Variables:
             // A vector of states from goal->start:
@@ -739,14 +739,14 @@ namespace ompl
             for (/*Already allocated & initialized*/; !curVertex->isRoot();
                  curVertex = curVertex->getParentConst())
             {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
                 // Check the case where the chain ends incorrectly.
                 if (curVertex->hasParent() == false)
                 {
                     throw ompl::Exception("The path to the goal does not originate at a start state. Something went "
                                           "wrong.");
                 }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
                 // Push back the parent into the vector as a state pointer:
                 reversePath.push_back(curVertex->getParentConst()->stateConst());
@@ -754,15 +754,15 @@ namespace ompl
             return reversePath;
         }
 
-        bool BITstar::checkEdge(const VertexConstPtrPair &edge)
+        bool biBITstar::checkEdge(const VertexConstPtrPair &edge)
         {
             ++numEdgeCollisionChecks_;
             return Planner::si_->checkMotion(edge.first->stateConst(), edge.second->stateConst());
         }
 
-        void BITstar::addEdge(const VertexPtrPair &newEdge, const ompl::base::Cost &edgeCost)
+        void biBITstar::addEdge(const VertexPtrPair &newEdge, const ompl::base::Cost &edgeCost)
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (newEdge.first->isInTree() == false)
             {
                 throw ompl::Exception("Adding an edge from a vertex not connected to the graph");
@@ -771,7 +771,7 @@ namespace ompl
             {
                 throw ompl::Exception("You have passed the wrong edge cost to addEdge.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Variables
             // The edge is a rewiring if it is current in the tree:
@@ -785,9 +785,9 @@ namespace ompl
             }
             else
             {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
                 graphPtr_->assertValidSample(newEdge.second, false);
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
                 // If not, we just add the vertex
 
                 // Add a parent to the child, updating descendant costs:
@@ -801,9 +801,9 @@ namespace ompl
             }
         }
 
-        void BITstar::replaceParent(const VertexPtrPair &newEdge, const ompl::base::Cost &edgeCost)
+        void biBITstar::replaceParent(const VertexPtrPair &newEdge, const ompl::base::Cost &edgeCost)
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (newEdge.second->getParent()->getId() == newEdge.first->getId())
             {
                 throw ompl::Exception("The new and old parents of the given rewiring are the same.");
@@ -813,7 +813,7 @@ namespace ompl
             {
                 throw ompl::Exception("The new edge will increase the cost-to-come of the vertex!");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Increment our counter:
             ++numRewirings_;
@@ -834,7 +834,7 @@ namespace ompl
             queuePtr_->markVertexUnsorted(newEdge.second);
         }
 
-        void BITstar::updateGoalVertex()
+        void biBITstar::updateGoalVertex()
         {
             // Variable
             // Whether we've updated the goal, be pessimistic.
@@ -934,7 +934,7 @@ namespace ompl
             // No else, the goal didn't change
         }
 
-        void BITstar::goalMessage() const
+        void biBITstar::goalMessage() const
         {
             OMPL_INFORM("%s (%u iters): Found a solution of cost %.4f (%u vertices) from %u samples by processing %u "
                         "edges (%u collision checked) to create %u vertices and perform %u rewirings. The graph "
@@ -944,7 +944,7 @@ namespace ompl
                         graphPtr_->numVerticesConnected(), numRewirings_, graphPtr_->numConnectedVertices());
         }
 
-        void BITstar::endSuccessMessage() const
+        void biBITstar::endSuccessMessage() const
         {
             OMPL_INFORM("%s: Finished with a solution of cost %.4f (%u vertices) found from %u samples by processing "
                         "%u edges (%u collision checked) to create %u vertices and perform %u rewirings. The final "
@@ -954,7 +954,7 @@ namespace ompl
                         numRewirings_, graphPtr_->numConnectedVertices());
         }
 
-        void BITstar::endFailureMessage() const
+        void biBITstar::endFailureMessage() const
         {
             if (graphPtr_->getTrackApproximateSolutions())
             {
@@ -978,7 +978,7 @@ namespace ompl
             }
         }
 
-        void BITstar::statusMessage(const ompl::msg::LogLevel &msgLevel, const std::string &status) const
+        void biBITstar::statusMessage(const ompl::msg::LogLevel &msgLevel, const std::string &status) const
         {
             // Check if we need to create the message
             if (msgLevel >= ompl::msg::getLogLevel())
@@ -1050,61 +1050,61 @@ namespace ompl
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Boring sets/gets (Public) and progress properties (Protected):
-        void BITstar::setRewireFactor(double rewireFactor)
+        void biBITstar::setRewireFactor(double rewireFactor)
         {
             graphPtr_->setRewireFactor(rewireFactor);
         }
 
-        double BITstar::getRewireFactor() const
+        double biBITstar::getRewireFactor() const
         {
             return graphPtr_->getRewireFactor();
         }
 
-        void BITstar::setSamplesPerBatch(unsigned int n)
+        void biBITstar::setSamplesPerBatch(unsigned int n)
         {
             samplesPerBatch_ = n;
         }
 
-        unsigned int BITstar::getSamplesPerBatch() const
+        unsigned int biBITstar::getSamplesPerBatch() const
         {
             return samplesPerBatch_;
         }
 
-        void BITstar::setUseKNearest(bool useKNearest)
+        void biBITstar::setUseKNearest(bool useKNearest)
         {
             // Store
             graphPtr_->setUseKNearest(useKNearest);
 
             // If the planner is default named, we change it:
-            if (!graphPtr_->getUseKNearest() && Planner::getName() == "kBITstar")
+            if (!graphPtr_->getUseKNearest() && Planner::getName() == "kbiBITstar")
             {
                 // It's current the default k-nearest BIT* name, and we're toggling, so set to the default r-disc
-                Planner::setName("BITstar");
+                Planner::setName("biBITstar");
             }
-            else if (graphPtr_->getUseKNearest() && Planner::getName() == "BITstar")
+            else if (graphPtr_->getUseKNearest() && Planner::getName() == "biBITstar")
             {
                 // It's current the default r-disc BIT* name, and we're toggling, so set to the default k-nearest
-                Planner::setName("kBITstar");
+                Planner::setName("kbiBITstar");
             }
             // It's not default named, don't change it
         }
 
-        bool BITstar::getUseKNearest() const
+        bool biBITstar::getUseKNearest() const
         {
             return graphPtr_->getUseKNearest();
         }
 
-        void BITstar::setStrictQueueOrdering(bool beStrict)
+        void biBITstar::setStrictQueueOrdering(bool beStrict)
         {
             queuePtr_->setStrictQueueOrdering(beStrict);
         }
 
-        bool BITstar::getStrictQueueOrdering() const
+        bool biBITstar::getStrictQueueOrdering() const
         {
             return queuePtr_->getStrictQueueOrdering();
         }
 
-        void BITstar::setPruning(bool prune)
+        void biBITstar::setPruning(bool prune)
         {
             if (!prune)
             {
@@ -1118,12 +1118,12 @@ namespace ompl
             queuePtr_->setPruneDuringResort(usePruning_);
         }
 
-        bool BITstar::getPruning() const
+        bool biBITstar::getPruning() const
         {
             return usePruning_;
         }
 
-        void BITstar::setPruneThresholdFraction(double fractionalChange)
+        void biBITstar::setPruneThresholdFraction(double fractionalChange)
         {
             if (fractionalChange < 0.0 || fractionalChange > 1.0)
             {
@@ -1133,52 +1133,52 @@ namespace ompl
             pruneFraction_ = fractionalChange;
         }
 
-        double BITstar::getPruneThresholdFraction() const
+        double biBITstar::getPruneThresholdFraction() const
         {
             return pruneFraction_;
         }
 
-        void BITstar::setDelayRewiringUntilInitialSolution(bool delayRewiring)
+        void biBITstar::setDelayRewiringUntilInitialSolution(bool delayRewiring)
         {
             queuePtr_->setDelayedRewiring(delayRewiring);
         }
 
-        bool BITstar::getDelayRewiringUntilInitialSolution() const
+        bool biBITstar::getDelayRewiringUntilInitialSolution() const
         {
             return queuePtr_->getDelayedRewiring();
         }
 
-        void BITstar::setJustInTimeSampling(bool useJit)
+        void biBITstar::setJustInTimeSampling(bool useJit)
         {
             graphPtr_->setJustInTimeSampling(useJit);
         }
 
-        bool BITstar::getJustInTimeSampling() const
+        bool biBITstar::getJustInTimeSampling() const
         {
             return graphPtr_->getJustInTimeSampling();
         }
 
-        void BITstar::setDropSamplesOnPrune(bool dropSamples)
+        void biBITstar::setDropSamplesOnPrune(bool dropSamples)
         {
             graphPtr_->setDropSamplesOnPrune(dropSamples);
         }
 
-        bool BITstar::getDropSamplesOnPrune() const
+        bool biBITstar::getDropSamplesOnPrune() const
         {
             return graphPtr_->getDropSamplesOnPrune();
         }
 
-        void BITstar::setStopOnSolnImprovement(bool stopOnChange)
+        void biBITstar::setStopOnSolnImprovement(bool stopOnChange)
         {
             stopOnSolnChange_ = stopOnChange;
         }
 
-        bool BITstar::getStopOnSolnImprovement() const
+        bool biBITstar::getStopOnSolnImprovement() const
         {
             return stopOnSolnChange_;
         }
 
-        void BITstar::setConsiderApproximateSolutions(bool findApproximate)
+        void biBITstar::setConsiderApproximateSolutions(bool findApproximate)
         {
             // Store
             graphPtr_->setTrackApproximateSolutions(findApproximate);
@@ -1187,13 +1187,13 @@ namespace ompl
             Planner::specs_.approximateSolutions = graphPtr_->getTrackApproximateSolutions();
         }
 
-        bool BITstar::getConsiderApproximateSolutions() const
+        bool biBITstar::getConsiderApproximateSolutions() const
         {
             return graphPtr_->getTrackApproximateSolutions();
         }
 
         template <template <typename T> class NN>
-        void BITstar::setNearestNeighbors()
+        void biBITstar::setNearestNeighbors()
         {
             // Check if the problem is already setup, if so, the NN structs have data in them and you can't really
             // change them:
@@ -1209,92 +1209,92 @@ namespace ompl
             }
         }
 
-        std::string BITstar::bestCostProgressProperty() const
+        std::string biBITstar::bestCostProgressProperty() const
         {
             return ompl::toString(this->bestCost().value());
         }
 
-        std::string BITstar::bestLengthProgressProperty() const
+        std::string biBITstar::bestLengthProgressProperty() const
         {
             return std::to_string(bestLength_);
         }
 
-        std::string BITstar::currentFreeProgressProperty() const
+        std::string biBITstar::currentFreeProgressProperty() const
         {
             return std::to_string(graphPtr_->numFreeSamples());
         }
 
-        std::string BITstar::currentVertexProgressProperty() const
+        std::string biBITstar::currentVertexProgressProperty() const
         {
             return std::to_string(graphPtr_->numConnectedVertices());
         }
 
-        std::string BITstar::vertexQueueSizeProgressProperty() const
+        std::string biBITstar::vertexQueueSizeProgressProperty() const
         {
             return std::to_string(queuePtr_->numVertices());
         }
 
-        std::string BITstar::edgeQueueSizeProgressProperty() const
+        std::string biBITstar::edgeQueueSizeProgressProperty() const
         {
             return std::to_string(queuePtr_->numEdges());
         }
 
-        std::string BITstar::iterationProgressProperty() const
+        std::string biBITstar::iterationProgressProperty() const
         {
             return std::to_string(this->numIterations());
         }
 
-        std::string BITstar::batchesProgressProperty() const
+        std::string biBITstar::batchesProgressProperty() const
         {
             return std::to_string(this->numBatches());
         }
 
-        std::string BITstar::pruningProgressProperty() const
+        std::string biBITstar::pruningProgressProperty() const
         {
             return std::to_string(numPrunings_);
         }
 
-        std::string BITstar::totalStatesCreatedProgressProperty() const
+        std::string biBITstar::totalStatesCreatedProgressProperty() const
         {
             return std::to_string(graphPtr_->numStatesGenerated());
         }
 
-        std::string BITstar::verticesConstructedProgressProperty() const
+        std::string biBITstar::verticesConstructedProgressProperty() const
         {
             return std::to_string(graphPtr_->numVerticesConnected());
         }
 
-        std::string BITstar::statesPrunedProgressProperty() const
+        std::string biBITstar::statesPrunedProgressProperty() const
         {
             return std::to_string(graphPtr_->numFreeStatesPruned());
         }
 
-        std::string BITstar::verticesDisconnectedProgressProperty() const
+        std::string biBITstar::verticesDisconnectedProgressProperty() const
         {
             return std::to_string(graphPtr_->numVerticesDisconnected());
         }
 
-        std::string BITstar::rewiringProgressProperty() const
+        std::string biBITstar::rewiringProgressProperty() const
         {
             return std::to_string(numRewirings_);
         }
 
-        std::string BITstar::stateCollisionCheckProgressProperty() const
+        std::string biBITstar::stateCollisionCheckProgressProperty() const
         {
             return std::to_string(graphPtr_->numStateCollisionChecks());
         }
 
-        std::string BITstar::edgeCollisionCheckProgressProperty() const
+        std::string biBITstar::edgeCollisionCheckProgressProperty() const
         {
             return std::to_string(numEdgeCollisionChecks_);
         }
 
-        std::string BITstar::nearestNeighbourProgressProperty() const
+        std::string biBITstar::nearestNeighbourProgressProperty() const
         {
             return std::to_string(graphPtr_->numNearestLookups());
         }
 
-        std::string BITstar::edgesProcessedProgressProperty() const
+        std::string biBITstar::edgesProcessedProgressProperty() const
         {
             return std::to_string(queuePtr_->numEdgesPopped());
         }

@@ -34,12 +34,12 @@
 
 /* Authors: Jonathan Gammell */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_IDGENERATOR_
-#define OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_IDGENERATOR_
+#ifndef OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_IDGENERATOR_
+#define OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_IDGENERATOR_
 
-// I am member class of the BITstar class, so I need to include it's definition to be aware of the class BITstar. It has
+// I am member class of the biBITstar class, so I need to include it's definition to be aware of the class biBITstar. It has
 // a forward declaration to me.
-#include "ompl/geometric/planners/bitstar/BITstar.h"
+#include "../biBITstar.h"
 
 #include <thread>
 #include <mutex>
@@ -55,13 +55,13 @@ namespace ompl
         A class to generate unique IDs for the \ref gVertex "Vertex" class. */
 
         /** \brief An ID generator class for vertex IDs.*/
-        class BITstar::IdGenerator
+        class biBITstar::IdGenerator
         {
         public:
             IdGenerator() = default;
 
             /** \brief Generator a new id and increment the global/static counter of IDs. */
-            BITstar::VertexId getNewId()
+            biBITstar::VertexId getNewId()
             {
                 // Create a scoped mutex copy of idMutex that unlocks when it goes out of scope:
                 std::lock_guard<std::mutex> lockGuard(idMutex_);
@@ -73,7 +73,7 @@ namespace ompl
         private:
             // Variables:
             // The next ID to be returned. We never use 0.
-            BITstar::VertexId nextId_{1u};
+            biBITstar::VertexId nextId_{1u};
             // The mutex
             std::mutex idMutex_;
         };
@@ -87,19 +87,19 @@ namespace
     // The initialization flag stating that the ID generator has been created:
     std::once_flag g_IdInited;
     // A pointer to the actual ID generator
-    boost::scoped_ptr<ompl::geometric::BITstar::IdGenerator> g_IdGenerator;
+    boost::scoped_ptr<ompl::geometric::biBITstar::IdGenerator> g_IdGenerator;
 
     // A function to initialize the ID generator pointer:
     void initIdGenerator()
     {
-        g_IdGenerator.reset(new ompl::geometric::BITstar::IdGenerator());
+        g_IdGenerator.reset(new ompl::geometric::biBITstar::IdGenerator());
     }
 
     // A function to get the current ID generator:
-    ompl::geometric::BITstar::IdGenerator &getIdGenerator()
+    ompl::geometric::biBITstar::IdGenerator &getIdGenerator()
     {
         std::call_once(g_IdInited, &initIdGenerator);
         return *g_IdGenerator;
     }
 }
-#endif  // OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_IDGENERATOR_
+#endif  // OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_IDGENERATOR_

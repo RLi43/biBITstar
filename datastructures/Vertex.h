@@ -34,8 +34,8 @@
 
 /* Authors: Jonathan Gammell */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_VERTEX_
-#define OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_VERTEX_
+#ifndef OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_VERTEX_
+#define OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_VERTEX_
 
 // vector
 #include <vector>
@@ -52,11 +52,11 @@
 #include "ompl/base/OptimizationObjective.h"
 
 // BIT*:
-// I am member class of the BITstar class (i.e., I am in it's namespace), so I need to include it's definition to be
-// aware of the class BITstar. It has a forward declaration to me and the other helper classes.
-#include "ompl/geometric/planners/bitstar/BITstar.h"
+// I am member class of the biBITstar class (i.e., I am in it's namespace), so I need to include it's definition to be
+// aware of the class biBITstar. It has a forward declaration to me and the other helper classes.
+#include "../biBITstar.h"
 // I store data for the SearchQueue, get their definitions.
-#include "ompl/geometric/planners/bitstar/datastructures/SearchQueue.h"
+#include "SearchQueue.h"
 
 namespace ompl
 {
@@ -76,8 +76,8 @@ namespace ompl
         has been changed. Updates only flow downstream.
         */
 
-        /** \brief The vertex of the underlying graphs in \ref gBITstar "BIT*"*/
-        class BITstar::Vertex
+        /** \brief The vertex of the underlying graphs in \ref gbiBITstar "BIT*"*/
+        class biBITstar::Vertex
         {
         public:
             ////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ namespace ompl
             virtual ~Vertex();
 
             /** \brief The (unique) vertex ID */
-            BITstar::VertexId getId() const;
+            biBITstar::VertexId getId() const;
 
             /** \brief The state of a vertex as a constant pointer */
             ompl::base::State const *stateConst() const;
@@ -218,10 +218,10 @@ namespace ompl
             void clearIncomingEdgeQueuePtrs();
 
             /** \brief Get an iterator to the front of the incoming edge queue entry vector. Will clear existing in/out lookups if they were added under a different id. */
-            BITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator incomingEdgeQueuePtrsBeginConst(unsigned int vertexQueueResetNum);
+            biBITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator incomingEdgeQueuePtrsBeginConst(unsigned int vertexQueueResetNum);
 
             /** \brief Get an iterator to the end of the incoming edge queue entry vector. Will clear existing in/out lookups if they were added under a different id. */
-            BITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator incomingEdgeQueuePtrsEndConst(unsigned int vertexQueueResetNum);
+            biBITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator incomingEdgeQueuePtrsEndConst(unsigned int vertexQueueResetNum);
 
             /** \brief Get the number of edge queue entries incoming to this vertex. Will clear existing in/out lookups if they were added under a different id. */
             unsigned int getNumIncomingEdgeQueuePtrs(unsigned int vertexQueueResetNum);
@@ -245,10 +245,10 @@ namespace ompl
             void clearOutgoingEdgeQueuePtrs();
 
             /** \brief Get an iterator to the front of the outgoing edge queue entry vector. Will clear existing in/out lookups if they were added under a different id. */
-            BITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator outgoingEdgeQueuePtrsBeginConst(unsigned int vertexQueueResetNum);
+            biBITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator outgoingEdgeQueuePtrsBeginConst(unsigned int vertexQueueResetNum);
 
             /** \brief Get an iterator to the end of the outgoing edge queue entry vector. Will clear existing in/out lookups if they were added under a different id. */
-            BITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator outgoingEdgeQueuePtrsEndConst(unsigned int vertexQueueResetNum);
+            biBITstar::SearchQueue::EdgeQueueElemPtrVector::const_iterator outgoingEdgeQueuePtrsEndConst(unsigned int vertexQueueResetNum);
 
             /** \brief Get the number of edge queue entries outgoing from this vertex. Will clear existing in/out lookups if they were added under a different id. */
             unsigned int getNumOutgoingEdgeQueuePtrs(unsigned int vertexQueueResetNum);
@@ -265,7 +265,7 @@ namespace ompl
 
         private:
             /** \brief The vertex ID */
-            BITstar::VertexId vId_;
+            biBITstar::VertexId vId_;
 
             /** \brief The state space used by the planner */
             ompl::base::SpaceInformationPtr si_;
@@ -339,4 +339,4 @@ namespace ompl
         };  // class: Vertex
     }       // geometric
 }  // ompl
-#endif  // OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_VERTEX_
+#endif  // OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_VERTEX_

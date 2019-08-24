@@ -34,8 +34,8 @@
 
 /* Authors: Jonathan Gammell */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_SEARCHQUEUE_
-#define OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_SEARCHQUEUE_
+#ifndef OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_SEARCHQUEUE_
+#define OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_SEARCHQUEUE_
 
 // STL:
 // std::pair
@@ -62,10 +62,10 @@
 #include "ompl/datastructures/BinaryHeap.h"
 
 // BIT*:
-// I am member class of the BITstar class (i.e., I am in it's namespace), so I need to include it's definition to be
-// aware of the class BITstar. It has a forward declaration to me and the other helper classes but I will need to
+// I am member class of the biBITstar class (i.e., I am in it's namespace), so I need to include it's definition to be
+// aware of the class biBITstar. It has a forward declaration to me and the other helper classes but I will need to
 // include any I use in my cpp (to avoid dependency loops).
-#include "ompl/geometric/planners/bitstar/BITstar.h"
+#include "../biBITstar.h"
 
 namespace ompl
 {
@@ -75,7 +75,7 @@ namespace ompl
         \par Short Description
         A two-stage queue that consists of vertices expanded into edges to be processed. The queue consists of a vertex
         expansion queue and an edge processing queue. Vertices are expanded as needed from the vertex queue into edges
-        places in the edge queue. Edges are removed from the edge queue for processing by \ref gBITstar "BIT*". The
+        places in the edge queue. Edges are removed from the edge queue for processing by \ref gbiBITstar "BIT*". The
         vertex queue is implemented as a static ordered list of the vertices in the graph with a token (i.e., an
         iterator) pointing to the next vertex that needs to be expanded. This is specifically a multimap ordered on
         ompl::base::Cost. The edge queue is implemented as an ordered list of potential edges. It is filled by the
@@ -89,7 +89,7 @@ namespace ompl
 
         /** \brief A queue of edges to be processed that integrates both the expansion of \ref gVertex "Vertices" and
          * the ordering of the resulting edges. */
-        class BITstar::SearchQueue
+        class biBITstar::SearchQueue
         {
         public:
             ////////////////////////////////
@@ -394,7 +394,7 @@ namespace ompl
             /** \brief Whether the class is setup */
             bool isSetup_{false};
 
-            /** \brief A cost/heuristic helper class. As I am a copy of the version owned by BITstar.cpp, I can be reset
+            /** \brief A cost/heuristic helper class. As I am a copy of the version owned by biBITstar.cpp, I can be reset
              * in a clear().*/
             CostHelper *costHelpPtr_{nullptr};
 
@@ -445,4 +445,4 @@ namespace ompl
         };  // class: SearchQueue
     }       // geometric
 }  // ompl
-#endif  // OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_SEARCHQUEUE_
+#endif  // OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_SEARCHQUEUE_

@@ -34,8 +34,8 @@
 
 /* Authors: Jonathan Gammell */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_BITSTAR_BITSTAR_
-#define OMPL_GEOMETRIC_PLANNERS_BITSTAR_BITSTAR_
+#ifndef OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_BIBITSTAR_
+#define OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_BIBITSTAR_
 
 // STL:
 // std::string
@@ -55,21 +55,21 @@
 // Planner includes:
 //#include "ompl/geometric/planners/PlannerIncludes.h"
 
-// BIT*:
+// biBIT*:
 // The helper data classes, Vertex.h, CostHelper.h, ImplicitGraph.h, and SearchQueue.h are forward declared and then
-// included in the source file (.cpp) as they are member classes of BITstar.
+// included in the source file (.cpp) as they are member classes of biBITstar.
 
-// Debug setting. Defining BITSTAR_DEBUG enables (significant) debug output. Do not enable unless necessary.
-//#define BITSTAR_DEBUG
+// Debug setting. Defining BIBITSTAR_DEBUG enables (significant) debug output. Do not enable unless necessary.
+//#define BIBITSTAR_DEBUG
 
 namespace ompl
 {
     namespace geometric
     {
         /**
-        @anchor gBITstar
+        @anchor gbiBITstar
 
-        \ref gBITstar "BIT*" (Batch Informed Trees) is an \e anytime asymptotically optimal sampling-based planning
+        \ref gbiBITstar "biBIT*" (Batch Informed Trees) is an \e anytime asymptotically optimal sampling-based planning
         algorithm. It approaches problems by assuming that a \e simple solution exists and only goes onto consider \e
         complex solutions when that proves incorrect. It accomplishes this by using heuristics to search in order of
         decreasing potential solution quality.
@@ -81,33 +81,33 @@ namespace ompl
         amount of time (which it probably will). The difference in this number of connections considered is a RGG theory
         question, and certainly merits further review.
 
-        This implementation of BIT* can handle multiple starts, multiple goals, a variety of optimization objectives
-        (e.g., path length), and with \ref gBITstarSetJustInTimeSampling "just-in-time sampling", infinite problem
+        This implementation of biBIT* can handle multiple starts, multiple goals, a variety of optimization objectives
+        (e.g., path length), and with \ref gbiBITstarSetJustInTimeSampling "just-in-time sampling", infinite problem
         domains. Note that for some of optimization  objectives, the user must specify a suitable heuristic and that
         when this heuristic is not specified, it will use the conservative/always admissible \e zero-heuristic.
 
         This implementation also includes some new advancements, including the ability to prioritize exploration until
-        an initial solution is found (\ref gBITstarSetDelayRewiringUntilInitialSolution "Delayed rewiring"), the ability
-        to generate samples only when necessary (\ref gBITstarSetJustInTimeSampling "Just-in-time sampling"), and the
+        an initial solution is found (\ref gbiBITstarSetDelayRewiringUntilInitialSolution "Delayed rewiring"), the ability
+        to generate samples only when necessary (\ref gbiBITstarSetJustInTimeSampling "Just-in-time sampling"), and the
         ability to periodically remove samples that have yet to be connected to the graph (\ref
-        gBITstarSetDropSamplesOnPrune "Sample dropping"). With just-in-time sampling, BIT* can even solve planning
+        gbiBITstarSetDropSamplesOnPrune "Sample dropping"). With just-in-time sampling, biBIT* can even solve planning
         problems with infinite state space boundaries, i.e., (-inf, inf).
 
 
         @par Associated publication:
 
-        J. D. Gammell, S. S. Srinivasa, T. D. Barfoot, "Batch Informed Trees (BIT*): Sampling-based
+        J. D. Gammell, S. S. Srinivasa, T. D. Barfoot, "Batch Informed Trees (biBIT*): Sampling-based
         Optimal Planning via the Heuristically Guided Search of Implicit Random Geometric Graphs,"
         In Proceedings of the IEEE International Conference on Robotics and Automation (ICRA).
         Seattle, WA, USA, 26-30 May 2015.
         DOI: <a href="http://dx.doi.org/10.1109/ICRA.2015.7139620">10.1109/ICRA.2015.7139620</a>.
         <a href="http://www.youtube.com/watch?v=MRzSfLpNBmA">Illustration video</a>.
         */
-        /** \brief Batch Informed Trees (BIT*)*/
-        class BITstar : public ompl::base::Planner
+        /** \brief Batch Informed Trees (biBIT*)*/
+        class biBITstar : public ompl::base::Planner
         {
         public:
-            // Forward declarations so that the classes belong to BIT*:
+            // Forward declarations so that the classes belong to biBIT*:
             /** \brief The vertex of implicit and explicit graphs. */
             class Vertex;
             /** \brief A generator of unique vertex IDs. */
@@ -147,10 +147,10 @@ namespace ompl
             typedef std::function<std::string()> NameFunc;
 
             /** \brief Construct! */
-            BITstar(const base::SpaceInformationPtr &si, const std::string &name = "BITstar");
+            biBITstar(const base::SpaceInformationPtr &si, const std::string &name = "biBITstar");
 
             /** \brief Destruct! */
-            virtual ~BITstar() override = default;
+            virtual ~biBITstar() override = default;
 
             /** \brief Setup */
             void setup() override;
@@ -236,22 +236,22 @@ namespace ompl
              * occur. */
             double getPruneThresholdFraction() const;
 
-            /** @anchor gBITstarSetDelayRewiringUntilInitialSolution \brief Delay the consideration of rewiring edges
+            /** @anchor gbiBITstarSetDelayRewiringUntilInitialSolution \brief Delay the consideration of rewiring edges
              * until an initial solution is found. When multiple batches are required to find an initial solution, this
              * can improve the time required to do so, by delaying improvements in the cost-to-come to a connected
              * vertex. As the rewiring edges are considered once an initial solution is found, this has no effect on the
              * theoretical asymptotic optimality of the planner. */
             void setDelayRewiringUntilInitialSolution(bool delayRewiring);
 
-            /** \brief Get whether BIT* is delaying rewiring until a solution is found. */
+            /** \brief Get whether biBIT* is delaying rewiring until a solution is found. */
             bool getDelayRewiringUntilInitialSolution() const;
 
-            /** @anchor gBITstarSetJustInTimeSampling \brief Delay the generation of samples until they are \e
+            /** @anchor gbiBITstarSetJustInTimeSampling \brief Delay the generation of samples until they are \e
              * necessary. This only works when using an r-disc connection scheme, and is currently only implemented for
              * problems seeking to minimize path length. This helps reduce the complexity of nearest-neighbour look ups,
              * and can be particularly beneficial in unbounded planning problems where selecting an appropriate bounding
-             * box is difficult. With JIT sampling enabled, BIT* can solve planning problems whose state space has \e
-             * infinite \e boundaries. When enumerating outgoing edges from a vertex, BIT* uses JIT sampling to assure
+             * box is difficult. With JIT sampling enabled, biBIT* can solve planning problems whose state space has \e
+             * infinite \e boundaries. When enumerating outgoing edges from a vertex, biBIT* uses JIT sampling to assure
              * that the area within r of the vertex has been sampled during this batch. This is done in a way that
              * maintains uniform sample distribution and has no effect on the theoretical asymptotic optimality of the
              * planner. */
@@ -260,10 +260,10 @@ namespace ompl
             /** \brief Get whether we're using just-in-time sampling */
             bool getJustInTimeSampling() const;
 
-            /** @anchor gBITstarSetDropSamplesOnPrune \brief Drop \e all unconnected samples when pruning, regardless of
-             * their heuristic value. This provides a method for BIT* to remove samples that have not been connected to
+            /** @anchor gbiBITstarSetDropSamplesOnPrune \brief Drop \e all unconnected samples when pruning, regardless of
+             * their heuristic value. This provides a method for biBIT* to remove samples that have not been connected to
              * the graph and may be beneficial in problems where portions of the free space are unreachable (i.e.,
-             * disconnected). BIT* calculates the connection radius for each batch from the underlying uniform
+             * disconnected). biBIT* calculates the connection radius for each batch from the underlying uniform
              * distribution of states. The resulting larger connection radius may be detrimental in areas where the
              * graph is dense, but maintains the theoretical asymptotic optimality of the planner. */
             void setDropSamplesOnPrune(bool dropSamples);
@@ -272,16 +272,16 @@ namespace ompl
             bool getDropSamplesOnPrune() const;
 
             /** \brief Stop the planner each time a solution improvement is found. Useful
-            for examining the intermediate solutions found by BIT*. */
+            for examining the intermediate solutions found by biBIT*. */
             void setStopOnSolnImprovement(bool stopOnChange);
 
-            /** \brief Get whether BIT* stops each time a solution is found. */
+            /** \brief Get whether biBIT* stops each time a solution is found. */
             bool getStopOnSolnImprovement() const;
 
-            /** \brief Set BIT* to consider approximate solutions during its initial search. */
+            /** \brief Set biBIT* to consider approximate solutions during its initial search. */
             void setConsiderApproximateSolutions(bool findApproximate);
 
-            /** \brief Get whether BIT* is considering approximate solutions. */
+            /** \brief Get whether biBIT* is considering approximate solutions. */
             bool getConsiderApproximateSolutions() const;
 
             /** \brief Set a different nearest neighbours datastructure */
@@ -291,7 +291,7 @@ namespace ompl
 
         private:
             ///////////////////////////////////////////////////////////////////
-            // BIT* primitives:
+            // biBIT* primitives:
             /** \brief A single iteration */
             void iterate();
 
@@ -486,7 +486,7 @@ namespace ompl
             /** \brief Whether to stop the planner as soon as the path changes (param) */
             bool stopOnSolnChange_{false};
             ///////////////////////////////////////////////////////////////////
-        };  // class: BITstar
+        };  // class: biBITstar
     }  // geometric
 }  // ompl
-#endif  // OMPL_GEOMETRIC_PLANNERS_BITSTAR_BITSTAR_
+#endif  // OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_BIBITSTAR_

@@ -34,8 +34,8 @@
 
 /* Authors: Jonathan Gammell */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_IMPLICITGRAPH_
-#define OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_IMPLICITGRAPH_
+#ifndef OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_IMPLICITGRAPH_
+#define OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_IMPLICITGRAPH_
 
 // OMPL:
 // The cost class:
@@ -46,10 +46,10 @@
 #include "ompl/datastructures/NearestNeighbors.h"
 
 // BIT*:
-// I am member class of the BITstar class (i.e., I am in it's namespace), so I need to include it's definition to be
-// aware of the class BITstar. It has a forward declaration to me and the other helper classes but I will need to
+// I am member class of the biBITstar class (i.e., I am in it's namespace), so I need to include it's definition to be
+// aware of the class biBITstar. It has a forward declaration to me and the other helper classes but I will need to
 // include any I use in my .cpp (to avoid dependency loops).
-#include "ompl/geometric/planners/bitstar/BITstar.h"
+#include "../biBITstar.h"
 
 namespace ompl
 {
@@ -61,7 +61,7 @@ namespace ompl
         */
 
         /** \brief A conceptual representation of samples as an edge-implicit random geometric graph. */
-        class BITstar::ImplicitGraph
+        class biBITstar::ImplicitGraph
         {
         public:
             ////////////////////////////////
@@ -319,11 +319,11 @@ namespace ompl
             /** \brief The problem definition */
             ompl::base::ProblemDefinitionPtr pdef_{nullptr};
 
-            /** \brief A cost/heuristic helper class. As this is a copy of the version owned by BITstar.cpp it can be
+            /** \brief A cost/heuristic helper class. As this is a copy of the version owned by biBITstar.cpp it can be
              * reset in a clear(). */
             CostHelper *costHelpPtr_{nullptr};
 
-            /** \brief The queue class. As this is a copy of the version owned by BITstar.cpp it can be reset in a
+            /** \brief The queue class. As this is a copy of the version owned by biBITstar.cpp it can be reset in a
              * clear(). */
             SearchQueue *queuePtr_{nullptr};
 
@@ -444,4 +444,4 @@ namespace ompl
         };  // class: ImplicitGraph
     }       // geometric
 }  // ompl
-#endif  // OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_IMPLICITGRAPH_
+#endif  // OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_IMPLICITGRAPH_

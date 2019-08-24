@@ -35,7 +35,7 @@
 /* Authors: Jonathan Gammell */
 
 // My definition:
-#include "ompl/geometric/planners/bitstar/datastructures/SearchQueue.h"
+#include "../SearchQueue.h"
 
 // For std::move
 #include <utility>
@@ -50,21 +50,21 @@
 
 // BIT*:
 // A collection of common helper functions
-#include "ompl/geometric/planners/bitstar/datastructures/HelperFunctions.h"
+#include "../HelperFunctions.h"
 // The vertex class:
-#include "ompl/geometric/planners/bitstar/datastructures/Vertex.h"
+#include "../Vertex.h"
 // The cost-helper class:
-#include "ompl/geometric/planners/bitstar/datastructures/CostHelper.h"
+#include "../CostHelper.h"
 // The implicit graph:
-#include "ompl/geometric/planners/bitstar/datastructures/ImplicitGraph.h"
+#include "../ImplicitGraph.h"
 
 // Debug macros
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
     /** \brief A debug-only call to assert that the object is setup. */
     #define ASSERT_SETUP this->assertSetup();
 #else
     #define ASSERT_SETUP
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
 namespace ompl
 {
@@ -72,7 +72,7 @@ namespace ompl
     {
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Public functions:
-        BITstar::SearchQueue::SearchQueue(NameFunc nameFunc)
+        biBITstar::SearchQueue::SearchQueue(NameFunc nameFunc)
           : nameFunc_(std::move(nameFunc))
           , vertexQueue_([this](const CostDouble &lhs, const CostDouble &rhs)
                          {
@@ -86,7 +86,7 @@ namespace ompl
         {
         }
 
-        void BITstar::SearchQueue::setup(CostHelper *costHelpPtr, ImplicitGraph *graphPtr)
+        void biBITstar::SearchQueue::setup(CostHelper *costHelpPtr, ImplicitGraph *graphPtr)
         {
             // Store that I am setup
             isSetup_ = true;
@@ -99,7 +99,7 @@ namespace ompl
             solnCost_ = costHelpPtr_->infiniteCost();
         }
 
-        void BITstar::SearchQueue::clear()
+        void biBITstar::SearchQueue::clear()
         {
             // Reset everything to the state of construction OTHER than planner name and settings/parameters
             // Keep this in the order of the constructors for easy verification:
@@ -139,7 +139,7 @@ namespace ompl
             // pruneDuringResort_
         }
 
-        void BITstar::SearchQueue::enqueueVertex(const VertexPtr &newVertex, bool removeFromFree)
+        void biBITstar::SearchQueue::enqueueVertex(const VertexPtr &newVertex, bool removeFromFree)
         {
             ASSERT_SETUP
 
@@ -147,17 +147,17 @@ namespace ompl
             this->vertexInsertHelper(newVertex, true, removeFromFree, true);
         }
 
-        void BITstar::SearchQueue::enqueueEdge(const VertexPtrPair &newEdge)
+        void biBITstar::SearchQueue::enqueueEdge(const VertexPtrPair &newEdge)
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that the parent vertex is in the vertex queue
             if (!newEdge.first->hasVertexQueueEntry())
             {
                 throw ompl::Exception("Attempted to enqueue an edge from a vertex not in the vertex queue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Variable:
             // The iterator to the new edge in the queue:
@@ -173,7 +173,7 @@ namespace ompl
             newEdge.second->addIncomingEdgeQueuePtr(edgeElemPtr, numQueueResets_);
         }
 
-        void BITstar::SearchQueue::enqueueEdge(const VertexPtr &sourceVertex, const VertexPtr &targetVertex)
+        void biBITstar::SearchQueue::enqueueEdge(const VertexPtr &sourceVertex, const VertexPtr &targetVertex)
         {
             ASSERT_SETUP
 
@@ -181,7 +181,7 @@ namespace ompl
             this->enqueueEdge(std::make_pair(sourceVertex, targetVertex));
         }
 
-        void BITstar::SearchQueue::unqueueVertex(const VertexPtr &oldVertex)
+        void biBITstar::SearchQueue::unqueueVertex(const VertexPtr &oldVertex)
         {
             ASSERT_SETUP
 
@@ -195,16 +195,16 @@ namespace ompl
             this->vertexRemoveHelper(oldVertex, true);
         }
 
-        BITstar::VertexPtr BITstar::SearchQueue::frontVertex()
+        biBITstar::VertexPtr biBITstar::SearchQueue::frontVertex()
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->isEmpty() == true)
             {
                 throw ompl::Exception("Attempted to access the first element in an empty SearchQueue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Update the queue:
             this->updateQueue();
@@ -213,16 +213,16 @@ namespace ompl
             return vertexQueue_.begin()->second;
         }
 
-        BITstar::VertexPtrPair BITstar::SearchQueue::frontEdge()
+        biBITstar::VertexPtrPair biBITstar::SearchQueue::frontEdge()
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->isEmpty() == true)
             {
                 throw ompl::Exception("Attempted to access the first element in an empty SearchQueue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Update the queue:
             this->updateQueue();
@@ -231,16 +231,16 @@ namespace ompl
             return edgeQueue_.top()->data.second;
         }
 
-        BITstar::SearchQueue::CostDouble BITstar::SearchQueue::frontVertexValue()
+        biBITstar::SearchQueue::CostDouble biBITstar::SearchQueue::frontVertexValue()
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->isEmpty() == true)
             {
                 throw ompl::Exception("Attempted to access the first element in an empty SearchQueue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Update the queue:
             this->updateQueue();
@@ -249,16 +249,16 @@ namespace ompl
             return vertexQueue_.begin()->first;
         }
 
-        BITstar::SearchQueue::CostTriple BITstar::SearchQueue::frontEdgeValue()
+        biBITstar::SearchQueue::CostTriple biBITstar::SearchQueue::frontEdgeValue()
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->isEmpty() == true)
             {
                 throw ompl::Exception("Attempted to access the first element in an empty SearchQueue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Update the queue:
             this->updateQueue();
@@ -267,7 +267,7 @@ namespace ompl
             return edgeQueue_.top()->data.first;
         }
 
-        void BITstar::SearchQueue::popFrontEdge(VertexPtrPair *bestEdge)
+        void biBITstar::SearchQueue::popFrontEdge(VertexPtrPair *bestEdge)
         {
             ASSERT_SETUP
 
@@ -275,22 +275,22 @@ namespace ompl
             // The top of the binary heap
             EdgeQueueElemPtr bestElemPtr;
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (this->isEmpty() == true)
             {
                 throw ompl::Exception("Attempted to pop an empty SearchQueue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Update the queue:
             this->updateQueue();
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (edgeQueue_.empty())
             {
                 throw ompl::Exception("Edge queue is still empty after an update.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Get the front:
             bestElemPtr = edgeQueue_.top();
@@ -309,7 +309,7 @@ namespace ompl
             ++numEdgesPopped_;
         }
 
-        BITstar::VertexPtrPair BITstar::SearchQueue::popFrontEdge()
+        biBITstar::VertexPtrPair biBITstar::SearchQueue::popFrontEdge()
         {
             ASSERT_SETUP
 
@@ -320,7 +320,7 @@ namespace ompl
             return rval;
         }
 
-        void BITstar::SearchQueue::hasSolution(const ompl::base::Cost &solnCost)
+        void biBITstar::SearchQueue::hasSolution(const ompl::base::Cost &solnCost)
         {
             ASSERT_SETUP
 
@@ -331,7 +331,7 @@ namespace ompl
             solnCost_ = solnCost;
         }
 
-        void BITstar::SearchQueue::removeEdgesTo(const VertexPtr &cVertex)
+        void biBITstar::SearchQueue::removeEdgesTo(const VertexPtr &cVertex)
         {
             ASSERT_SETUP
 
@@ -356,7 +356,7 @@ namespace ompl
             // No else, nothing to remove_to
         }
 
-        void BITstar::SearchQueue::removeEdgesFrom(const VertexPtr &pVertex)
+        void biBITstar::SearchQueue::removeEdgesFrom(const VertexPtr &pVertex)
         {
             ASSERT_SETUP
 
@@ -381,7 +381,7 @@ namespace ompl
             // No else, nothing to remove_from
         }
 
-        void BITstar::SearchQueue::removeExtraEdgesTo(const VertexPtr &cVertex)
+        void biBITstar::SearchQueue::removeExtraEdgesTo(const VertexPtr &cVertex)
         {
             ASSERT_SETUP
 
@@ -422,7 +422,7 @@ namespace ompl
             // No else, nothing to prune_to
         }
 
-        void BITstar::SearchQueue::removeExtraEdgesFrom(const VertexPtr &pVertex)
+        void biBITstar::SearchQueue::removeExtraEdgesFrom(const VertexPtr &pVertex)
         {
             ASSERT_SETUP
 
@@ -463,18 +463,18 @@ namespace ompl
             // No else, nothing to prune_from
         }
 
-        void BITstar::SearchQueue::markVertexUnsorted(const VertexPtr &vertex)
+        void biBITstar::SearchQueue::markVertexUnsorted(const VertexPtr &vertex)
         {
             ASSERT_SETUP
 
             resortVertices_.push_back(vertex);
         }
 
-        std::pair<unsigned int, unsigned int> BITstar::SearchQueue::prune(const VertexConstPtr &vertex)
+        std::pair<unsigned int, unsigned int> biBITstar::SearchQueue::prune(const VertexConstPtr &vertex)
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (hasExactSolution_ == false)
             {
                 throw ompl::Exception("Prune cannot be called until a solution is found");
@@ -483,7 +483,7 @@ namespace ompl
             {
                 throw ompl::Exception("Prune cannot be called on an unsorted queue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // The vertex expansion queue is sorted on an estimated solution cost considering the *current* cost-to-come
             // of the vertices, while we prune by considering the best-case cost-to-come.
@@ -530,7 +530,7 @@ namespace ompl
             return numPruned;
         }
 
-        void BITstar::SearchQueue::resort()
+        void biBITstar::SearchQueue::resort()
         {
             ASSERT_SETUP
 
@@ -539,7 +539,7 @@ namespace ompl
             {
                 // Variable:
                 // The container ordered on vertex depth:
-                typedef std::unordered_map<BITstar::VertexId, VertexPtr> VertexIdToVertexPtrUMap;
+                typedef std::unordered_map<biBITstar::VertexId, VertexPtr> VertexIdToVertexPtrUMap;
                 typedef std::map<unsigned int, VertexIdToVertexPtrUMap> DepthToUMapMap;
                 DepthToUMapMap uniqueResorts;
                 // The number of vertices and samples pruned, respectively:
@@ -632,7 +632,7 @@ namespace ompl
             // No else, nothing to resort
         }
 
-        void BITstar::SearchQueue::finish()
+        void biBITstar::SearchQueue::finish()
         {
             ASSERT_SETUP
 
@@ -658,16 +658,16 @@ namespace ompl
             }
         }
 
-        void BITstar::SearchQueue::reset()
+        void biBITstar::SearchQueue::reset()
         {
             ASSERT_SETUP
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (resortVertices_.empty() == false)
             {
                 throw ompl::Exception("SearchQueue::reset() called with an unsorted queue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Clear the edge container:
             edgeQueue_.clear();
@@ -682,7 +682,7 @@ namespace ompl
             vertexToExpand_ = vertexQueue_.begin();
         }
 
-        bool BITstar::SearchQueue::vertexInsertCondition(const VertexPtr &state) const
+        bool biBITstar::SearchQueue::vertexInsertCondition(const VertexPtr &state) const
         {
             ASSERT_SETUP
 
@@ -695,7 +695,7 @@ namespace ompl
                                                                 solnCost_);
         }
 
-        bool BITstar::SearchQueue::edgeInsertCondition(const VertexPtrPair &edge) const
+        bool biBITstar::SearchQueue::edgeInsertCondition(const VertexPtrPair &edge) const
         {
             ASSERT_SETUP
 
@@ -721,7 +721,7 @@ namespace ompl
             return rval;
         }
 
-        bool BITstar::SearchQueue::vertexPruneCondition(const VertexPtr &state) const
+        bool biBITstar::SearchQueue::vertexPruneCondition(const VertexPtr &state) const
         {
             ASSERT_SETUP
 
@@ -733,7 +733,7 @@ namespace ompl
             return costHelpPtr_->isCostWorseThan(costHelpPtr_->currentHeuristicVertex(state), solnCost_);
         }
 
-        bool BITstar::SearchQueue::samplePruneCondition(const VertexPtr &state) const
+        bool biBITstar::SearchQueue::samplePruneCondition(const VertexPtr &state) const
         {
             ASSERT_SETUP
 
@@ -744,7 +744,7 @@ namespace ompl
                                                                solnCost_);
         }
 
-        bool BITstar::SearchQueue::edgePruneCondition(const VertexPtrPair &edge) const
+        bool biBITstar::SearchQueue::edgePruneCondition(const VertexPtrPair &edge) const
         {
             ASSERT_SETUP
 
@@ -770,7 +770,7 @@ namespace ompl
             return rval;
         }
 
-        unsigned int BITstar::SearchQueue::numEdges()
+        unsigned int biBITstar::SearchQueue::numEdges()
         {
             ASSERT_SETUP
 
@@ -780,7 +780,7 @@ namespace ompl
             return edgeQueue_.size();
         }
 
-        unsigned int BITstar::SearchQueue::numVertices()
+        unsigned int biBITstar::SearchQueue::numVertices()
         {
             ASSERT_SETUP
 
@@ -805,7 +805,7 @@ namespace ompl
             return numToExpand;
         }
 
-        unsigned int BITstar::SearchQueue::numEdgesTo(const VertexPtr &cVertex)
+        unsigned int biBITstar::SearchQueue::numEdgesTo(const VertexPtr &cVertex)
         {
             ASSERT_SETUP
 
@@ -816,7 +816,7 @@ namespace ompl
             return cVertex->getNumIncomingEdgeQueuePtrs(numQueueResets_);
         }
 
-        unsigned int BITstar::SearchQueue::numEdgesFrom(const VertexPtr &pVertex)
+        unsigned int biBITstar::SearchQueue::numEdgesFrom(const VertexPtr &pVertex)
         {
             ASSERT_SETUP
 
@@ -827,28 +827,28 @@ namespace ompl
             return pVertex->getNumOutgoingEdgeQueuePtrs(numQueueResets_);
         }
 
-        unsigned int BITstar::SearchQueue::numUnsorted() const
+        unsigned int biBITstar::SearchQueue::numUnsorted() const
         {
             ASSERT_SETUP
 
             return resortVertices_.size();
         }
 
-        bool BITstar::SearchQueue::isSorted() const
+        bool biBITstar::SearchQueue::isSorted() const
         {
             ASSERT_SETUP
 
             return resortVertices_.empty();
         }
 
-        bool BITstar::SearchQueue::isReset() const
+        bool biBITstar::SearchQueue::isReset() const
         {
             ASSERT_SETUP
 
             return (vertexToExpand_ == vertexQueue_.begin() && edgeQueue_.empty());
         }
 
-        bool BITstar::SearchQueue::isEmpty()
+        bool biBITstar::SearchQueue::isEmpty()
         {
             ASSERT_SETUP
 
@@ -873,7 +873,7 @@ namespace ompl
             return edgeQueue_.empty();
         }
 
-        bool BITstar::SearchQueue::isVertexExpanded(const VertexConstPtr &vertex) const
+        bool biBITstar::SearchQueue::isVertexExpanded(const VertexConstPtr &vertex) const
         {
             ASSERT_SETUP
 
@@ -891,7 +891,7 @@ namespace ompl
             return this->queueComparison(vertex->getVertexQueueIter()->first, vertexToExpand_->first);
         }
 
-        void BITstar::SearchQueue::getVertices(VertexConstPtrVector *vertexQueue)
+        void biBITstar::SearchQueue::getVertices(VertexConstPtrVector *vertexQueue)
         {
             ASSERT_SETUP
 
@@ -909,7 +909,7 @@ namespace ompl
             }
         }
 
-        void BITstar::SearchQueue::getEdges(VertexConstPtrPairVector *edgeQueue)
+        void biBITstar::SearchQueue::getEdges(VertexConstPtrPairVector *edgeQueue)
         {
             ASSERT_SETUP
 
@@ -936,7 +936,7 @@ namespace ompl
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Private functions:
-        void BITstar::SearchQueue::updateQueue()
+        void biBITstar::SearchQueue::updateQueue()
         {
             // If we are using strict queue ordering, we must resort the queue before we update it.
             if (useStrictQueueOrdering_)
@@ -983,7 +983,7 @@ namespace ompl
             }
         }
 
-        void BITstar::SearchQueue::expandNextVertex()
+        void biBITstar::SearchQueue::expandNextVertex()
         {
             // Should we expand the next vertex?
             if (this->vertexInsertCondition(vertexToExpand_->second))
@@ -1001,16 +1001,16 @@ namespace ompl
             }
         }
 
-        void BITstar::SearchQueue::expandVertex(const VertexPtr &vertex)
+        void biBITstar::SearchQueue::expandVertex(const VertexPtr &vertex)
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that this vertex has no outgoing edge queue entries.
             if (vertex->hasOutgoingEdgeQueueEntries(numQueueResets_))
             {
                 std::cout << std::endl << "vId: " << vertex->getId() << std::endl;
                 throw ompl::Exception("Unexpanded vertex already has outgoing entries in the edge queue.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Should we expand this vertex?
             if (this->vertexInsertCondition(vertex))
@@ -1074,7 +1074,7 @@ namespace ompl
             // No else
         }
 
-        void BITstar::SearchQueue::enqueueSamples(const VertexPtr &vertex, const VertexPtrVector& neighbourSamples, bool addAll)
+        void biBITstar::SearchQueue::enqueueSamples(const VertexPtr &vertex, const VertexPtrVector& neighbourSamples, bool addAll)
         {
             // Iterate through the samples and add each one
             for (auto &targetSample : neighbourSamples)
@@ -1092,7 +1092,7 @@ namespace ompl
             vertex->markExpandedToSamples();
         }
 
-        void BITstar::SearchQueue::enqueueVertices(const VertexPtr &vertex, const VertexPtrVector& neighbourVertices)
+        void biBITstar::SearchQueue::enqueueVertices(const VertexPtr &vertex, const VertexPtrVector& neighbourVertices)
         {
             // Iterate over the vector of connected targets and add only those who could ever provide a better
             // solution:
@@ -1126,7 +1126,7 @@ namespace ompl
             vertex->markExpandedToVertices();
         }
 
-        void BITstar::SearchQueue::enqueueEdgeConditionally(const VertexPtr &parent, const VertexPtr &child)
+        void biBITstar::SearchQueue::enqueueEdgeConditionally(const VertexPtr &parent, const VertexPtr &child)
         {
             // Variable:
             // The edge:
@@ -1143,7 +1143,7 @@ namespace ompl
             // No else, it can never provide a better solution
         }
 
-        void BITstar::SearchQueue::processKNearest(const VertexConstPtr &vertex, VertexPtrVector *kNearSamples,
+        void biBITstar::SearchQueue::processKNearest(const VertexConstPtr &vertex, VertexPtrVector *kNearSamples,
                                                    VertexPtrVector *kNearVertices)
         {
             // Variables
@@ -1189,7 +1189,7 @@ namespace ompl
             kNearVertices->resize(vertexPos);
         }
 
-        void BITstar::SearchQueue::resortVertex(const VertexPtr &unorderedVertex)
+        void biBITstar::SearchQueue::resortVertex(const VertexPtr &unorderedVertex)
         {
             // Variables:
             // Whether the vertex is expanded.
@@ -1212,13 +1212,13 @@ namespace ompl
                 alreadyExpanded = false;
             }
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that unexpanded vertices have no outgoing edges in the queue
             if (!alreadyExpanded && unorderedVertex->hasOutgoingEdgeQueueEntries(numQueueResets_))
             {
                 throw ompl::Exception("Unexpanded vertex has outgoing queue edges during a resort.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Update my place in the vertex queue by removing and adding myself:
             // Remove myself, not touching my edge-queue entries
@@ -1247,15 +1247,15 @@ namespace ompl
             // No else, I was not previously expanded so my edges (if there are now any) were created up to date
         }
 
-        std::pair<unsigned int, unsigned int> BITstar::SearchQueue::pruneBranch(const VertexPtr &branchBase)
+        std::pair<unsigned int, unsigned int> biBITstar::SearchQueue::pruneBranch(const VertexPtr &branchBase)
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert the vertex is in the tree
             if (branchBase->isInTree() == false)
             {
                 throw ompl::Exception("Trying to prune a disconnected vertex. Something went wrong.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // We must iterate over the children of this vertex and prune each one.
             // Then we must decide if this vertex (a) gets deleted or (b) placed back on the sample set.
@@ -1288,14 +1288,14 @@ namespace ompl
             return numPruned;
         }
 
-        void BITstar::SearchQueue::disconnectParent(const VertexPtr &oldVertex, bool cascadeCostUpdates)
+        void biBITstar::SearchQueue::disconnectParent(const VertexPtr &oldVertex, bool cascadeCostUpdates)
         {
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             if (oldVertex->hasParent() == false)
             {
                 throw ompl::Exception("An orphaned vertex has been passed for disconnection. Something went wrong.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Check if my parent has already been pruned. This can occur if we're cascading vertex disconnections.
             if (!oldVertex->getParent()->isPruned())
@@ -1308,7 +1308,7 @@ namespace ompl
             oldVertex->removeParent(cascadeCostUpdates);
         }
 
-        void BITstar::SearchQueue::vertexInsertHelper(const VertexPtr &newVertex, bool expandIfBeforeToken,
+        void biBITstar::SearchQueue::vertexInsertHelper(const VertexPtr &newVertex, bool expandIfBeforeToken,
                                                       bool removeFromFree, bool addToNNStruct)
         {
             // Variable:
@@ -1403,20 +1403,20 @@ namespace ompl
             // No else, this vertex must have already been expanded
         }
 
-        unsigned int BITstar::SearchQueue::vertexRemoveHelper(const VertexPtr &oldVertex, bool fullyRemove)
+        unsigned int biBITstar::SearchQueue::vertexRemoveHelper(const VertexPtr &oldVertex, bool fullyRemove)
         {
             // Variables
             // The number of samples deleted (i.e., if this vertex is NOT recycled as a sample, this is a 1)
             unsigned int deleted = 0u;
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // The use count of the passed shared pointer. Used in debug mode to assert that we took ownership of our own copy.
             unsigned int initCount = oldVertex.use_count();
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
             // A copy of the vertex pointer to be removed so we can't delete it out from under ourselves (occurs when
             // this function is given an element of the maintained set as the argument)
             VertexPtr vertexToDelete(oldVertex);
 
-#ifdef BITSTAR_DEBUG
+#ifdef BIBITSTAR_DEBUG
             // Assert that the vertexToDelete took it's own copy
             if (vertexToDelete.use_count() <= initCount)
             {
@@ -1436,7 +1436,7 @@ namespace ompl
                 std::cout << std::endl << "vId: " << vertexToDelete->getId() << std::endl;
                 throw ompl::Exception("Removing a nonexistent vertex. Something went wrong.");
             }
-#endif  // BITSTAR_DEBUG
+#endif  // BIBITSTAR_DEBUG
 
             // Check if we need to move the expansion token:
             if (vertexToDelete->getVertexQueueIter() == vertexToExpand_)
@@ -1464,13 +1464,13 @@ namespace ompl
             return deleted;
         }
 
-        BITstar::SearchQueue::CostDouble BITstar::SearchQueue::vertexQueueValue(const VertexPtr &vertex) const
+        biBITstar::SearchQueue::CostDouble biBITstar::SearchQueue::vertexQueueValue(const VertexPtr &vertex) const
         {
             // Construct and return an array
             return {{costHelpPtr_->currentHeuristicVertex(vertex), vertex->getCost()}};
         }
 
-        BITstar::SearchQueue::CostTriple BITstar::SearchQueue::edgeQueueValue(const VertexPtrPair &edge) const
+        biBITstar::SearchQueue::CostTriple biBITstar::SearchQueue::edgeQueueValue(const VertexPtrPair &edge) const
         {
             // Construct and return an array
             return {{costHelpPtr_->currentHeuristicEdge(edge), costHelpPtr_->currentHeuristicToTarget(edge),
@@ -1478,7 +1478,7 @@ namespace ompl
         }
 
         template <std::size_t SIZE>
-        bool BITstar::SearchQueue::queueComparison(const std::array<ompl::base::Cost, SIZE> &lhs,
+        bool biBITstar::SearchQueue::queueComparison(const std::array<ompl::base::Cost, SIZE> &lhs,
                                                    const std::array<ompl::base::Cost, SIZE> &rhs) const
         {
             return std::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend(),
@@ -1488,48 +1488,48 @@ namespace ompl
                                                 });
         }
 
-        void BITstar::SearchQueue::assertSetup() const
+        void biBITstar::SearchQueue::assertSetup() const
         {
             if (isSetup_ == false)
             {
-                throw ompl::Exception("BITstar::SearchQueue was used before it was setup.");
+                throw ompl::Exception("biBITstar::SearchQueue was used before it was setup.");
             }
         }
         /////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Boring sets/gets (Public):
-        void BITstar::SearchQueue::setStrictQueueOrdering(bool beStrict)
+        void biBITstar::SearchQueue::setStrictQueueOrdering(bool beStrict)
         {
             useStrictQueueOrdering_ = beStrict;
         }
 
-        bool BITstar::SearchQueue::getStrictQueueOrdering() const
+        bool biBITstar::SearchQueue::getStrictQueueOrdering() const
         {
             return useStrictQueueOrdering_;
         }
 
-        void BITstar::SearchQueue::setDelayedRewiring(bool delayRewiring)
+        void biBITstar::SearchQueue::setDelayedRewiring(bool delayRewiring)
         {
             delayRewiring_ = delayRewiring;
         }
 
-        bool BITstar::SearchQueue::getDelayedRewiring() const
+        bool biBITstar::SearchQueue::getDelayedRewiring() const
         {
             return delayRewiring_;
         }
 
-        void BITstar::SearchQueue::setPruneDuringResort(bool prune)
+        void biBITstar::SearchQueue::setPruneDuringResort(bool prune)
         {
             pruneDuringResort_ = prune;
         }
 
-        bool BITstar::SearchQueue::getPruneDuringResort() const
+        bool biBITstar::SearchQueue::getPruneDuringResort() const
         {
             return pruneDuringResort_;
         }
 
-        unsigned int BITstar::SearchQueue::numEdgesPopped() const
+        unsigned int biBITstar::SearchQueue::numEdgesPopped() const
         {
             return numEdgesPopped_;
         }

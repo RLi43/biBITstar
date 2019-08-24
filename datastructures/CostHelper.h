@@ -34,8 +34,8 @@
 
 /* Authors: Jonathan Gammell */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_COSTHELPER_
-#define OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_COSTHELPER_
+#ifndef OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_COSTHELPER_
+#define OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_COSTHELPER_
 
 // OMPL:
 // The cost class:
@@ -47,14 +47,14 @@
 
 
 // BIT*:
-// I am member class of the BITstar class (i.e., I am in it's namespace), so I need to include it's definition to be
-// aware of the class BITstar. It has a forward declaration to me and the other helper classes but I will need to
+// I am member class of the biBITstar class (i.e., I am in it's namespace), so I need to include it's definition to be
+// aware of the class biBITstar. It has a forward declaration to me and the other helper classes but I will need to
 // include any I use in my .cpp (to avoid dependency loops).
-#include "ompl/geometric/planners/bitstar/BITstar.h"
+#include "../biBITstar.h"
 // The vertex class
-#include "ompl/geometric/planners/bitstar/datastructures/Vertex.h"
+#include "Vertex.h"
 // The graph class
-#include "ompl/geometric/planners/bitstar/datastructures/ImplicitGraph.h"
+#include "ImplicitGraph.h"
 
 namespace ompl
 {
@@ -66,7 +66,7 @@ namespace ompl
         Most of these functions are simply combinatorial pass-throughs to the OptimizationObjective. */
 
         /** \brief A helper class to handle the various heuristic functions in one place. */
-        class BITstar::CostHelper
+        class biBITstar::CostHelper
         {
         public:
             ////////////////////////////////
@@ -326,10 +326,10 @@ namespace ompl
             ompl::base::OptimizationObjectivePtr opt_;
 
             /** \brief A local pointer to the samples/vertices viewed as an implicit graph. As this is a copy of the
-             * version owned by BITstar.cpp it can be reset in a clear(). */
+             * version owned by biBITstar.cpp it can be reset in a clear(). */
             ImplicitGraph *graphPtr_;
             ////////////////////////////////
         };  // class CostHelper
     }       // geometric
 }  // ompl
-#endif  // OMPL_GEOMETRIC_PLANNERS_BITSTAR_DATASTRUCTURES_COSTHELPER_
+#endif  // OMPL_GEOMETRIC_PLANNERS_BIBITSTAR_DATASTRUCTURES_COSTHELPER_
