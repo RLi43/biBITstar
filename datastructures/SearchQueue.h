@@ -142,7 +142,7 @@ namespace ompl
             /** \brief Insert a vertex into the vertex expansion queue. Vertices remain in the vertex queue until pruned
              * or manually removed. A moving token marks the line between expanded and not expanded vertices. Will
              * instruct the ImplicitGraph to move the vertex between sets, as necessary.*/
-            void enqueueVertex(const VertexPtr &newVertex, bool removeFromFree);
+            void enqueueVertex(const VertexPtr &newVertex, bool removeFromFree, bool isG);
 
             /** \brief Insert an edge into the edge processing queue. The source vertex of this edge must be in the
              * expansion queue (although it may already be expanded). */
@@ -328,10 +328,11 @@ namespace ompl
 
             /** \brief Iterate through the list of neighbouring unconnected vertices and add potential edges to
             * the queue if the vertex is marked as new *or* we're adding all of them. */
-            void enqueueSamples(const VertexPtr &vertex, const VertexPtrVector& neighbourSamples, bool addAll);
+            void enqueueSamples(const VertexPtr &vertex, const VertexPtrVector& neighbourSamples);
 
             /** \brief Iterate through the list of neighbouring vertices and add potential edges to the queue. */
             void enqueueVertices(const VertexPtr &vertex, const VertexPtrVector& neighbourVertices);
+            void enqueueVerticesToAnotherTree(const VertexPtr &vertex, const VertexPtrVector& neighbourVertices);
 
             /** \brief Attempt to add an edge to the queue. Checks that the edge meets the queueing condition. */
             void enqueueEdgeConditionally(const VertexPtr &parent, const VertexPtr &child);
@@ -358,7 +359,7 @@ namespace ompl
             /** \brief Insert a vertex into the queue and lookups. Expands vertex into edges if it comes before the
              * expansion token and expandIfBeforeToken is true. */
             void vertexInsertHelper(const VertexPtr &newVertex, bool expandIfBeforeToken, bool removeFromFree,
-                                    bool addToNNStruct);
+                                    bool addToNNStruct, bool isG);
 
             /** \brief Remove a vertex from the vertex queue and optionally also its edge queue and NN entries.
              * Returns the number of vertices that are completely deleted. */

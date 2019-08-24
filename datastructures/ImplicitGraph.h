@@ -90,17 +90,17 @@ namespace ompl
             /** \brief Gets whether the graph contains a goal or not. */
             bool hasAGoal() const;
 
-            /** \brief Returns a const-iterator to the front of the start-vertex vector */
-            VertexPtrVector::const_iterator startVerticesBeginConst() const;
+            // /** \brief Returns a const-iterator to the front of the start-vertex vector */
+            // VertexPtrVector::const_iterator startVerticesBeginConst() const;
 
-            /** \brief Returns a const-iterator to the end of the start-vertex vector */
-            VertexPtrVector::const_iterator startVerticesEndConst() const;
+            // /** \brief Returns a const-iterator to the end of the start-vertex vector */
+            // VertexPtrVector::const_iterator startVerticesEndConst() const;
 
-            /** \brief Returns a const-iterator to the front of the goal-vertex vector */
-            VertexPtrVector::const_iterator goalVerticesBeginConst() const;
+            // /** \brief Returns a const-iterator to the front of the goal-vertex vector */
+            // VertexPtrVector::const_iterator goalVerticesBeginConst() const;
 
-            /** \brief Returns a const-iterator to the end of the goal-vertex vector */
-            VertexPtrVector::const_iterator goalVerticesEndConst() const;
+            // /** \brief Returns a const-iterator to the end of the goal-vertex vector */
+            // VertexPtrVector::const_iterator goalVerticesEndConst() const;
 
             /** \brief Get the minimum cost solution possible for this problem. */
             ompl::base::Cost minCost() const;
@@ -120,7 +120,8 @@ namespace ompl
 
             /** \brief Get the nearest samples from the vertexNN_ using the appropriate "near" definition (i.e., k or
              * r). */
-            void nearestVertices(const VertexPtr &vertex, VertexPtrVector *neighbourVertices);
+            void nearestVertices(const VertexPtr &vertex, VertexPtrVector *neighbourVertices, bool isG);
+            VertexPtr nearestVertex(const VertexPtr &target, bool isG);
 
             /** \brief Adds the graph to the given PlannerData struct */
             void getGraphAsPlannerData(ompl::base::PlannerData &data) const;
@@ -146,8 +147,8 @@ namespace ompl
 
             /** \brief Adds any new goals or starts that have appeared in the problem definition to the vector of
              * vertices and the queue. Creates a new informed sampler if necessary. */
-            void updateStartAndGoalStates(ompl::base::PlannerInputStates &pis,
-                                          const base::PlannerTerminationCondition &ptc);
+            void updateStartAndGoalStates(ompl::base::PlannerInputStates &pis);//,
+                                          //const base::PlannerTerminationCondition &ptc);
 
             /** \brief Increase the resolution of the graph-based approximation of the continuous search domain by
              * adding a batch of new samples. */
@@ -157,6 +158,12 @@ namespace ompl
              * conditions of the SearchQueue. Returns the number of vertices disconnected and the number of samples
              * removed. */
             std::pair<unsigned int, unsigned int> prune(double prunedMeasure);
+
+            /////
+            ConnEdgeVector conn2TreesVector; 
+
+            VertexPtr startVertex_{nullptr};
+            VertexPtr goalVertex_{nullptr};
             //////////////////
 
             //////////////////
@@ -168,7 +175,7 @@ namespace ompl
             void removeSample(const VertexPtr &oldSample);
 
             /** \brief Add a vertex to the tree, optionally moving it from the set of unconnected samples. */
-            void addVertex(const VertexPtr &newVertex, bool removeFromFree);
+            void addVertex(const VertexPtr &newVertex, bool removeFromFree, bool isG);
 
             /** \brief Remove a vertex from the tree, can optionally be allowed to move it to the set of unconnected
              * samples if may still be useful. */
@@ -224,6 +231,8 @@ namespace ompl
 
             /** \brief The number of vertices in the tree (Size of vertexNN_). */
             unsigned int numConnectedVertices() const;
+            unsigned int numConnectedVerticesG() const;
+            unsigned int numConnectedVerticesH() const;
 
             /** \brief The \e total number of states generated (numSamples_). */
             unsigned int numStatesGenerated() const;
@@ -254,7 +263,7 @@ namespace ompl
 
             /** \brief Iterates through all the vertices in the tree and finds the one that is closes to the goal. This
              * is only necessary to find approximate solutions and should otherwise not be called. */
-            void findVertexClosestToGoal();
+            //void findVertexClosestToGoal();
             ////////////////////////////////
 
             ////////////////////////////////
@@ -262,7 +271,7 @@ namespace ompl
             /** \brief Prune any starts/goals that provably cannot provide a better solution than the current best
              * solution. This is done via the prune conditions of the SearchQueue. Returns the number of vertices
              * disconnected and the number of samples removed. */
-            std::pair<unsigned int, unsigned int> pruneStartsGoals();
+            //std::pair<unsigned int, unsigned int> pruneStartsGoals();
 
             /** \brief Prune any samples that provably cannot provide a better solution than the current best solution.
              * This is done via the prune conditions of the SearchQueue. Removes the number of samples removed.*/
@@ -334,12 +343,12 @@ namespace ompl
             ompl::base::InformedSamplerPtr sampler_{nullptr};
 
             /** \brief The start states of the problem as vertices. Constructed as a shared_ptr to give easy access to
-             * helper classes */
-            VertexPtrVector startVertices_;
+            //  * helper classes */
+            // VertexPtrVector startVertices_;
 
-            /** \brief The goal states of the problem as vertices. Constructed as a shared_ptr to give easy access to
-             * helper classes */
-            VertexPtrVector goalVertices_;
+            // /** \brief The goal states of the problem as vertices. Constructed as a shared_ptr to give easy access to
+            //  * helper classes */
+            // VertexPtrVector goalVertices_;
 
             /** \brief Any start states of the problem that have been pruned */
             VertexPtrVector prunedStartVertices_;
@@ -359,7 +368,8 @@ namespace ompl
 
             /** \brief The vertices as a nearest-neighbours data structure. Sorted by nnDistance. Size accessible via
              * numConnectedVertices */
-            VertexPtrNNPtr vertexNN_{nullptr};
+            VertexPtrNNPtr GvertexNN_{nullptr};
+            VertexPtrNNPtr HvertexNN_{nullptr};
 
             /** \brief The number of samples in this batch */
             unsigned int samplesInThisBatch_{0u};

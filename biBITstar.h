@@ -52,6 +52,8 @@
 #include "ompl/datastructures/NearestNeighbors.h"
 // The informed sampler structure
 #include "ompl/base/samplers/InformedStateSampler.h"
+// For ompl::geometric::path
+#include "ompl/geometric/PathGeometric.h"
 // Planner includes:
 //#include "ompl/geometric/planners/PlannerIncludes.h"
 
@@ -142,6 +144,9 @@ namespace ompl
             typedef std::vector<VertexConstPtrPair> VertexConstPtrPairVector;
             /** \brief The OMPL::NearestNeighbors structure. */
             typedef std::shared_ptr<NearestNeighbors<VertexPtr>> VertexPtrNNPtr;
+
+            typedef VertexPtrPair ConnEdge;
+            typedef std::vector<ConnEdge> ConnEdgeVector;
 
             /** \brief A utility functor for ImplicitGraph and SearchQueue */
             typedef std::function<std::string()> NameFunc;
@@ -309,7 +314,8 @@ namespace ompl
             // Helper functions for data manipulation and other low-level functions
             /** \brief Extract the best solution, ordered \e from the goal to the \e start and including both the goal
              * and the start. Used by both publishSolution and the ProblemDefinition::IntermediateSolutionCallback */
-            std::vector<const ompl::base::State *> bestPathFromGoalToStart() const;
+            //std::vector<const ompl::base::State *> bestPathFromGoalToStart() const;
+            std::shared_ptr<ompl::geometric::PathGeometric> bestPath() const;
 
             /** \brief Checks an edge for collision. A wrapper to SpaceInformation->checkMotion that tracks number of
              * collision checks. */
@@ -323,7 +329,7 @@ namespace ompl
             void replaceParent(const VertexPtrPair &newEdge, const ompl::base::Cost &edgeCost);
 
             /** \brief The special work that needs to be done to update the goal vertex if the solution has changed. */
-            void updateGoalVertex();
+            //void updateGoalVertex();
             ///////////////////////////////////////////////////////////////////
 
             ///////////////////////////////////////////////////////////////////
@@ -426,7 +432,8 @@ namespace ompl
             std::shared_ptr<SearchQueue> queuePtr_{nullptr};
 
             /** \brief The goal vertex of the current best solution */
-            VertexConstPtr curGoalVertex_{nullptr};
+            //VertexConstPtr curGoalVertex_{nullptr};
+            ConnEdge curBestConn_;
 
             /** \brief The best cost found to date. This is the maximum total-heuristic cost of samples we'll consider.
              * Accessible via bestCostProgressProperty */

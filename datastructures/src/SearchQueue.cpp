@@ -139,12 +139,12 @@ namespace ompl
             // pruneDuringResort_
         }
 
-        void biBITstar::SearchQueue::enqueueVertex(const VertexPtr &newVertex, bool removeFromFree)
+        void biBITstar::SearchQueue::enqueueVertex(const VertexPtr &newVertex, bool removeFromFree, bool isG)
         {
             ASSERT_SETUP
 
             // Insert the vertex:
-            this->vertexInsertHelper(newVertex, true, removeFromFree, true);
+            this->vertexInsertHelper(newVertex, true, removeFromFree, true, isG);
         }
 
         void biBITstar::SearchQueue::enqueueEdge(const VertexPtrPair &newEdge)
@@ -1015,43 +1015,47 @@ namespace ompl
             // Should we expand this vertex?
             if (this->vertexInsertCondition(vertex))
             {
-                // Variables:
-                // The vector of nearby samples (either within r or the k-nearest)
+                /// expand to samples
                 VertexPtrVector neighbourSamples;
-                // The vector of nearby vertices
-                VertexPtrVector neighbourVertices;
-
                 // Get the set of nearby free states
                 graphPtr_->nearestSamples(vertex, &neighbourSamples);
-
-                // If we're usjng k-nearest, we technically need to be doing to combined k-nearest.
-                // So get the nearestVertices and do some post-processing
-                if (graphPtr_->getUseKNearest())
-                {
-                    // Get the set of nearby vertices
-                    graphPtr_->nearestVertices(vertex, &neighbourVertices);
-
-                    // Post process them:
-                    this->processKNearest(vertex, &neighbourSamples, &neighbourVertices);
-                }
-                // No else
-
-                // Add potential edges from the vertex to nearby states.
-                // Do so intelligently to avoid repeatedly considering the same failed edges (likely due to collision).
-
                 // Add edges to unconnected targets who could ever provide a better solution:
                 // Has the vertex been expanded into edges towards unconnected samples before?
                 if (!vertex->hasBeenExpandedToSamples())
                 {
                     // It has not, that means none of its outgoing edges have been considered. Add them all
-                    this->enqueueSamples(vertex, neighbourSamples, true);
+                    this->enqueueSamples(vertex, neighbourSamples);
                 }
                 else
                 {
                     // It has, which means that outgoing edges to old unconnected vertices have already been considered.
                     // Only add those that lead to new vertices
-                    this->enqueueSamples(vertex, neighbourSamples, false);
+                    this->enqueueSamples(vertex, neighbourSamples);
                 }
+                /// expand to another tree
+                if(!vertex->hasBeenExpandedToAnotherTree()){
+                    VertexPtrVector anotherTreeVertices;
+                    graphPtr_->nearestVertices(vertex, &anotherTreeVertices,!vertex->isGtree());
+                    //TODO not really understand why post process
+
+                    this->enqueueVerticesToAnotherTree(vertex,anotherTreeVertices);
+                }
+                
+
+
+                /// expand to same tree
+                VertexPtrVector neighbourVertices;
+                // If we're usjng k-nearest, we technically need to be doing to combined k-nearest.
+                // So get the nearestVertices and do some post-processing
+                if (graphPtr_->getUseKNearest())
+                {
+                    // Get the set of nearby vertices
+                    graphPtr_->nearestVertices(vertex, &neighbourVertices,vertex->isGtree());
+
+                    // Post process them:
+                    this->processKNearest(vertex, &neighbourSamples, &neighbourVertices);
+                }
+                // No else
 
                 // If the vertex has never been expanded into possible rewiring edges *and* either we're not delaying
                 // rewiring or we have a solution, we add those rewiring candidates:
@@ -1060,8 +1064,9 @@ namespace ompl
                     // If we're using an r-disc RGG, we will not have gotten the neighbour vertices yet, get them now
                     if (!graphPtr_->getUseKNearest())
                     {
+                        OMPL_ERROR("Doesn't support rNearest right now.");
                         // Get the set of nearby vertices
-                        graphPtr_->nearestVertices(vertex, &neighbourVertices);
+                        //graphPtr_->nearestVertices(vertex, &neighbourVertices);
                     }
                     // No else
 
@@ -1074,8 +1079,9 @@ namespace ompl
             // No else
         }
 
-        void biBITstar::SearchQueue::enqueueSamples(const VertexPtr &vertex, const VertexPtrVector& neighbourSamples, bool addAll)
+        void biBITstar::SearchQueue::enqueueSamples(const VertexPtr &vertex, const VertexPtrVector& neighbourSamples)
         {
+            bool addAll = vertex->hasBeenExpandedToSamples;
             // Iterate through the samples and add each one
             for (auto &targetSample : neighbourSamples)
             {
@@ -1092,6 +1098,7 @@ namespace ompl
             vertex->markExpandedToSamples();
         }
 
+        // to same tree
         void biBITstar::SearchQueue::enqueueVertices(const VertexPtr &vertex, const VertexPtrVector& neighbourVertices)
         {
             // Iterate over the vector of connected targets and add only those who could ever provide a better
@@ -1124,6 +1131,36 @@ namespace ompl
 
             // Mark the vertex as expanded into rewirings
             vertex->markExpandedToVertices();
+        }
+
+        // to another tree
+        void biBITstar::SearchQueue::enqueueVerticesToAnotherTree(const VertexPtr &vertex, const VertexPtrVector& neighbourVertices)
+        {
+            // Iterate over the vector of connected targets and add only those who could ever provide a better
+            // solution:
+            for (auto &targetVertex : neighbourVertices)
+            {
+                // Make sure it is not myself.
+                if (targetVertex->getId() != vertex->getId())
+                {
+                    // Make sure I am not already connected with it
+                    if(vertex->isConn2Another() && targetVertex->isConn2Another()){
+                        for (ConnEdge ce : graphPtr_->conn2TreesVector){
+                            if(ce.first->getId() == vertex->getId() && ce.second->getId() == targetVertex->getId())
+                                return;
+                            if(ce.first->getId() == targetVertex->getId() && ce.second->getId() == vertex->getId())
+                                return;
+                        }
+                    }
+                    
+                    this->enqueueEdgeConditionally(vertex, targetVertex);
+                            
+                }
+                // No else
+            }
+
+            // Mark the vertex as expanded into rewirings
+            vertex->markAsExpandedToAnotherTree();
         }
 
         void biBITstar::SearchQueue::enqueueEdgeConditionally(const VertexPtr &parent, const VertexPtr &child)
@@ -1226,7 +1263,7 @@ namespace ompl
 
             // Reinsert myself, expanding if I cross the token if I am not already expanded but not removing/adding
             // either NN struct
-            this->vertexInsertHelper(unorderedVertex, !alreadyExpanded, false, false);
+            this->vertexInsertHelper(unorderedVertex, !alreadyExpanded, false, false, unorderedVertex->isGtree());
 
             // If I was already expanded my edge-queue entries are out of date
             if (alreadyExpanded == true)
@@ -1309,7 +1346,7 @@ namespace ompl
         }
 
         void biBITstar::SearchQueue::vertexInsertHelper(const VertexPtr &newVertex, bool expandIfBeforeToken,
-                                                      bool removeFromFree, bool addToNNStruct)
+                                                      bool removeFromFree, bool addToNNStruct, bool isG)
         {
             // Variable:
             // The iterator to the new edge in the queue:
@@ -1318,7 +1355,7 @@ namespace ompl
             // Add the vertex to the graph
             if (addToNNStruct)
             {
-                graphPtr_->addVertex(newVertex, removeFromFree);
+                graphPtr_->addVertex(newVertex, removeFromFree, isG);
             }
 
             // Insert into the order map, getting the iterator

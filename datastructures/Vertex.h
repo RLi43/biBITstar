@@ -113,6 +113,8 @@ namespace ompl
             bool isGtree() const;
             bool isConn2Another() const;
             void markAsConn2Another(bool conn = true);
+            void markAsExpandedToAnotherTree();
+            bool hasBeenExpandedToAnotherTree() const;
             ////
 
             /** \brief Get the "depth" of the vertex from the root. A root vertex is at depth 0, a direct descendent of
@@ -288,6 +290,7 @@ namespace ompl
             /////
             bool isGtree_;
             bool isConn2_{false};
+            bool hasBeenExpandedToAnotherTree_{false};
 
             /** \brief Whether the vertex is new. */
             bool isNew_{true};

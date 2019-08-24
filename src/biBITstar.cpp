@@ -52,8 +52,6 @@
 #include "ompl/util/Exception.h"
 // For toString
 #include "ompl/util/String.h"
-// For ompl::geometric::path
-#include "ompl/geometric/PathGeometric.h"
 // For the default optimization objective:
 #include "ompl/base/objectives/PathLengthOptimizationObjective.h"
 
@@ -297,7 +295,7 @@ namespace ompl
             queuePtr_->clear();
 
             // Reset the various calculations and convenience containers. Will be recalculated on setup
-            curGoalVertex_.reset();
+            //curGoalVertex_.reset();
             bestCost_ = ompl::base::Cost(std::numeric_limits<double>::infinity());
             bestLength_ = 0u;
             prunedCost_ = ompl::base::Cost(std::numeric_limits<double>::infinity());
@@ -344,12 +342,14 @@ namespace ompl
             // PTC comes true and we give up):
             if (!graphPtr_->hasAGoal())
             {
-                graphPtr_->updateStartAndGoalStates(Planner::pis_, ptc);
+                OMPL_ERROR("no goal.");
+                //graphPtr_->updateStartAndGoalStates(Planner::pis_, ptc);
             }
 
             // Warn if we are missing a start
             if (!graphPtr_->hasAStart())
             {
+                OMPL_ERROR("no start.");
                 // We don't have a start, since there's no way to wait for one to appear, so we will not be solving this "problem" today
                 OMPL_WARN("%s: A solution cannot be found as no valid start states are available.", Planner::getName().c_str());
             }
@@ -418,13 +418,13 @@ namespace ompl
             if (hasExactSolution_)
             {
                 // Exact solution
-                data.markGoalState(curGoalVertex_->stateConst());
+                data.markGoalState(graphPtr_->goalVertex_->stateConst());
             }
-            else if (!hasExactSolution_ && graphPtr_->getTrackApproximateSolutions())
-            {
-                // Approximate solution
-                data.markGoalState(graphPtr_->closestVertexToGoal()->stateConst());
-            }
+            // else if (!hasExactSolution_ && graphPtr_->getTrackApproximateSolutions())
+            // {
+            //     // Approximate solution
+            //     data.markGoalState(graphPtr_->closestVertexToGoal()->stateConst());
+            // }
             // No else, no solution
         }
 
@@ -565,7 +565,7 @@ namespace ompl
 
                                     // If the path to the goal has changed, we will need to update the cached info about
                                     // the solution cost or solution length:
-                                    this->updateGoalVertex();
+                                    // this->updateGoalVertex();
 
                                     /*
                                     //Remove any unnecessary incoming edges in the edge queue
@@ -599,13 +599,13 @@ namespace ompl
             // Reset the queue:
             queuePtr_->reset();
 
-            // Do we need to update our starts or goals?
-            if (Planner::pis_.haveMoreStartStates() || Planner::pis_.haveMoreGoalStates())
-            {
-                // There are new starts/goals to get.
-                graphPtr_->updateStartAndGoalStates(Planner::pis_, ompl::base::plannerAlwaysTerminatingCondition());
-            }
-            // No else, we have enough of a problem to do some work, and everything's up to date.
+            // // Do we need to update our starts or goals?
+            // if (Planner::pis_.haveMoreStartStates() || Planner::pis_.haveMoreGoalStates())
+            // {
+            //     // There are new starts/goals to get.
+            //     graphPtr_->updateStartAndGoalStates(Planner::pis_, ompl::base::plannerAlwaysTerminatingCondition());
+            // }
+            // // No else, we have enough of a problem to do some work, and everything's up to date.
 
             // Prune the graph (if enabled)
             this->prune();
@@ -653,7 +653,8 @@ namespace ompl
                     numPruned = numPruned + graphPtr_->prune(informedMeasure);
 
                     // Prune the search.
-                    numPruned = numPruned + queuePtr_->prune(curGoalVertex_);
+                    numPruned = numPruned + queuePtr_->prune(graphPtr_->goalVertex_);
+                    numPruned = numPruned + queuePtr_->prune(graphPtr_->startVertex_);
 
                     // Store the cost at which we pruned:
                     prunedCost_ = bestCost_;
@@ -671,20 +672,12 @@ namespace ompl
 
         void biBITstar::publishSolution()
         {
+            //TODO
             // Variable
             // The reverse path of state pointers
             std::vector<const ompl::base::State *> reversePath;
             // Allocate a path geometric
-            auto pathGeoPtr = std::make_shared<ompl::geometric::PathGeometric>(Planner::si_);
-
-            // Get the reversed path
-            reversePath = this->bestPathFromGoalToStart();
-
-            // Now iterate that vector in reverse, putting the states into the path geometric
-            for (const auto &solnState : boost::adaptors::reverse(reversePath))
-            {
-                pathGeoPtr->append(solnState);
-            }
+            auto pathGeoPtr = bestPath();
 
             // Now create the solution
             ompl::base::PlannerSolution soln(pathGeoPtr);
@@ -692,11 +685,11 @@ namespace ompl
             // Mark the name:
             soln.setPlannerName(Planner::getName());
 
-            // Mark as approximate if not exact:
-            if (!hasExactSolution_ && graphPtr_->getTrackApproximateSolutions())
-            {
-                soln.setApproximate(graphPtr_->smallestDistanceToGoal());
-            }
+            // // Mark as approximate if not exact:
+            // if (!hasExactSolution_ && graphPtr_->getTrackApproximateSolutions())
+            // {
+            //     soln.setApproximate(graphPtr_->smallestDistanceToGoal());
+            // }
 
             // Mark whether the solution met the optimization objective:
             soln.optimized_ = costHelpPtr_->isSatisfied(bestCost_);
@@ -705,7 +698,7 @@ namespace ompl
             Planner::pdef_->addSolutionPath(soln);
         }
 
-        std::vector<const ompl::base::State *> biBITstar::bestPathFromGoalToStart() const
+        /* std::vector<const ompl::base::State *> biBITstar::bestPathFromGoalToStart() const
         {
             // Variables:
             // A vector of states from goal->start:
@@ -736,7 +729,7 @@ namespace ompl
             // *parent* of the iterator into the vector until the vertex has no parent.
             // This will allows us to add the start (as the parent of the first child) and then stop when we get to the
             // start itself, avoiding trying to find its nonexistent child
-            for (/*Already allocated & initialized*/; !curVertex->isRoot();
+            for (; !curVertex->isRoot();//Already allocated & initialized
                  curVertex = curVertex->getParentConst())
             {
 #ifdef BIBITSTAR_DEBUG
@@ -752,6 +745,83 @@ namespace ompl
                 reversePath.push_back(curVertex->getParentConst()->stateConst());
             }
             return reversePath;
+        }*/
+
+        std::shared_ptr<ompl::geometric::PathGeometric> biBITstar::bestPath() const{
+
+            auto pathGeoPtr = std::make_shared<ompl::geometric::PathGeometric>(Planner::si_);
+
+            std::vector<const ompl::base::State *> reversePath;
+            // The vertex used to ascend up from the goal:
+            VertexConstPtr curVertex;
+            VertexConstPtr curVertex2;
+
+            // Iterate up the chain from the goal, creating a backwards vector:
+            if (hasExactSolution_)
+            {
+                // Start at vertex in the goal
+                if(curBestConn_.first->isGtree()){
+                    curVertex = curBestConn_.first;
+                    curVertex2 = curBestConn_.second;
+                    }
+                else {
+                    curVertex = curBestConn_.second;
+                    curVertex2 = curBestConn_.first;
+                    }
+            }
+            else
+            {
+                throw ompl::Exception("bestPath called without an exact solution.");
+            }
+
+            // Insert the conn in gtree into the path
+            reversePath.push_back(curVertex->stateConst());
+            // Then, use the vertex pointer like an iterator. Starting at the goal, we iterate up the chain pushing the
+            // *parent* of the iterator into the vector until the vertex has no parent.
+            // This will allows us to add the start (as the parent of the first child) and then stop when we get to the
+            // start itself, avoiding trying to find its nonexistent child
+            for (; !curVertex->isRoot();//Already allocated & initialized
+                 curVertex = curVertex->getParentConst())
+            {
+#ifdef BIBITSTAR_DEBUG
+                // Check the case where the chain ends incorrectly.
+                if (curVertex->hasParent() == false)
+                {
+                    throw ompl::Exception("The path to the goal does not originate at a start state. Something went "
+                                          "wrong.");
+                }
+#endif  // BIBITSTAR_DEBUG
+
+                // Push back the parent into the vector as a state pointer:
+                reversePath.push_back(curVertex->getParentConst()->stateConst());
+            }
+
+            // Now iterate that vector in reverse, putting the states into the path geometric
+            for (const auto &solnState : boost::adaptors::reverse(reversePath))
+            {
+                pathGeoPtr->append(solnState);
+            }
+
+            pathGeoPtr->append(curVertex2->stateConst());
+            for (; !curVertex2->isRoot();//Already allocated & initialized
+                 curVertex2 = curVertex2->getParentConst())
+            {
+#ifdef BIBITSTAR_DEBUG
+                // Check the case where the chain ends incorrectly.
+                if (curVertex->hasParent() == false)
+                {
+                    throw ompl::Exception("The path to the goal does not originate at a start state. Something went "
+                                          "wrong.");
+                }
+#endif  // BIBITSTAR_DEBUG
+
+                // Push back the parent into the vector as a state pointer:
+                pathGeoPtr->append(curVertex2->getParentConst()->stateConst());
+            }
+            
+            pathGeoPtr->append(curVertex2->stateConst());
+
+            return pathGeoPtr;
         }
 
         bool biBITstar::checkEdge(const VertexConstPtrPair &edge)
@@ -773,31 +843,63 @@ namespace ompl
             }
 #endif  // BIBITSTAR_DEBUG
 
-            // Variables
-            // The edge is a rewiring if it is current in the tree:
-            bool isRewiring = newEdge.second->hasParent();
+            if(newEdge.second->isInTree()){
+                if(newEdge.first->isGtree() == newEdge.second->isGtree()){
+                    // rewiring
+                    this->replaceParent(newEdge, edgeCost);
+                }
+                else{
+                    // new solution
+                    // Mark that we have a solution
+                    hasExactSolution_ = true;
+                    graphPtr_->conn2TreesVector.push_back(newEdge);
 
-            // Perform a rewiring?
-            if (isRewiring)
-            {
-                // Replace the edge
-                this->replaceParent(newEdge, edgeCost);
+
+                    ompl::base::Cost newCost = costHelpPtr_->combineCosts(newEdge.first->getCost(),
+                                                                        newEdge.second->getCost(),
+                                                                        edgeCost);
+                    // if a better solution
+                    if (costHelpPtr_->isCostBetterThan(newCost,bestCost_)){
+                        bestCost_ = newCost;
+                        curBestConn_ = newEdge;
+                        // and best length
+                        bestLength_ = curBestConn_.first->getDepth() + curBestConn_.second->getDepth() + 1u;
+                        // Tell everyone else about it.
+                        queuePtr_->hasSolution(bestCost_);
+                        graphPtr_->hasSolution(bestCost_);
+
+                        // Stop the solution loop if enabled:
+                        stopLoop_ = stopOnSolnChange_;
+
+                        // Brag:
+                        this->goalMessage();
+
+                        // // If enabled, pass the intermediate solution back through the call back:
+                        // if (static_cast<bool>(Planner::pdef_->getIntermediateSolutionCallback()))
+                        // {
+                        //     // The form of path passed to the intermediate solution callback is not well documented, but it
+                        //     // *appears* that it's not supposed
+                        //     // to include the start or goal; however, that makes no sense for multiple start/goal problems, so
+                        //     // we're going to include it anyway (sorry).
+                        //     // Similarly, it appears to be ordered as (goal, goal-1, goal-2,...start+1, start) which
+                        //     // conveniently allows us to reuse code.
+                        //     Planner::pdef_->getIntermediateSolutionCallback()(this, this->bestPathFromGoalToStart(), bestCost_);
+                        // }
+                    }
+                }
+
             }
-            else
-            {
+            else{
+                // to free sample, we just add the vertex
 #ifdef BIBITSTAR_DEBUG
                 graphPtr_->assertValidSample(newEdge.second, false);
 #endif  // BIBITSTAR_DEBUG
-                // If not, we just add the vertex
-
                 // Add a parent to the child, updating descendant costs:
                 newEdge.second->addParent(newEdge.first, edgeCost, true);
-
                 // Add a child to the parent:
                 newEdge.first->addChild(newEdge.second);
-
                 // Then enqueue the vertex, moving it from the free set to the vertex set.
-                queuePtr_->enqueueVertex(newEdge.second, true);
+                queuePtr_->enqueueVertex(newEdge.second, true, newEdge.first->isGtree());
             }
         }
 
@@ -834,7 +936,7 @@ namespace ompl
             queuePtr_->markVertexUnsorted(newEdge.second);
         }
 
-        void biBITstar::updateGoalVertex()
+        /* void biBITstar::updateGoalVertex()
         {
             // Variable
             // Whether we've updated the goal, be pessimistic.
@@ -932,7 +1034,7 @@ namespace ompl
                 }
             }
             // No else, the goal didn't change
-        }
+        }*/
 
         void biBITstar::goalMessage() const
         {

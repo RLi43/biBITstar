@@ -112,9 +112,13 @@ namespace ompl
             }
             // No else, already allocated (by a call to setNearestNeighbors())
 
-            if (!static_cast<bool>(vertexNN_))
+            if (!static_cast<bool>(GvertexNN_))
             {
-                vertexNN_.reset(ompl::tools::SelfConfig::getDefaultNearestNeighbors<VertexPtr>(plannerPtr));
+                GvertexNN_.reset(ompl::tools::SelfConfig::getDefaultNearestNeighbors<VertexPtr>(plannerPtr));
+            }
+            if (!static_cast<bool>(HvertexNN_))
+            {
+                HvertexNN_.reset(ompl::tools::SelfConfig::getDefaultNearestNeighbors<VertexPtr>(plannerPtr));
             }
             // No else, already allocated (by a call to setNearestNeighbors())
 
@@ -125,7 +129,8 @@ namespace ompl
                     return distanceFunction(a, b);
                 });
             freeStateNN_->setDistanceFunction(distfun);
-            vertexNN_->setDistanceFunction(distfun);
+            GvertexNN_->setDistanceFunction(distfun);
+            HvertexNN_->setDistanceFunction(distfun);
 
             // Set the min, max and sampled cost to the proper objective-based values:
             minCost_ = costHelpPtr_->infiniteCost();
@@ -133,7 +138,7 @@ namespace ompl
             costSampled_ = costHelpPtr_->infiniteCost();
 
             // Add any start and goals vertices that exist to the queue, but do NOT wait for any more goals:
-            this->updateStartAndGoalStates(pis, ompl::base::plannerAlwaysTerminatingCondition());
+            this->updateStartAndGoalStates(pis);//, ompl::base::plannerAlwaysTerminatingCondition());
 
             // Get the measure of the problem
             approximationMeasure_ = si_->getSpaceMeasure();
@@ -155,7 +160,8 @@ namespace ompl
                 // No else
 
                 // Check that we have a start and goal
-                if (startVertices_.empty() || goalVertices_.empty())
+                //if (startVertices_.empty() || goalVertices_.empty())
+                if (static_cast<bool>(startVertex_) || static_cast<bool>(goalVertex_) )
                 {
                     throw ompl::Exception("For unbounded planning problems, at least one start and one goal must exist "
                                           "before calling setup.");
@@ -170,14 +176,15 @@ namespace ompl
                 // This number is completely made up.
                 double distScale = 2.0;
 
-                // Find the max distance
-                for (const auto &startVertex : startVertices_)
-                {
-                    for (const auto &goalVertex : goalVertices_)
-                    {
-                        maxDist = std::max(maxDist, si_->distance(startVertex->stateConst(), goalVertex->stateConst()));
-                    }
-                }
+                // // Find the max distance
+                // for (const auto &startVertex : startVertices_)
+                // {
+                //     for (const auto &goalVertex : goalVertices_)
+                //     {
+                //         maxDist = std::max(maxDist, si_->distance(startVertex->stateConst(), goalVertex->stateConst()));
+                //     }
+                // }
+                maxDist = si_->distance(startVertex_->stateConst(),goalVertex_->stateConst());
 
                 // Calculate an estimate of the problem measure by (hyper)cubing the max distance
                 approximationMeasure_ = std::pow(distScale * maxDist, si_->getStateDimension());
@@ -189,7 +196,7 @@ namespace ompl
             k_rgg_ = this->minimumRggK();
 
             // Make the initial k all vertices:
-            k_ = startVertices_.size() + goalVertices_.size();
+            k_ = 2u;//startVertices_.size() + goalVertices_.size();
 
             // Make the initial r infinity
             r_ = std::numeric_limits<double>::infinity();
@@ -214,8 +221,10 @@ namespace ompl
             sampler_.reset();
 
             // Containers
-            startVertices_.clear();
-            goalVertices_.clear();
+            // startVertices_.clear();
+            // goalVertices_.clear();
+            startVertex_ = nullptr;
+            goalVertex_ = nullptr;
             prunedStartVertices_.clear();
             prunedGoalVertices_.clear();
             newSamples_.clear();
@@ -230,10 +239,15 @@ namespace ompl
             // No else, not allocated
 
             // The set of vertices
-            if (static_cast<bool>(vertexNN_))
+            if (static_cast<bool>(GvertexNN_))
             {
-                vertexNN_->clear();
-                vertexNN_.reset();
+                GvertexNN_->clear();
+                GvertexNN_.reset();
+            }
+            if (static_cast<bool>(HvertexNN_))
+            {
+                HvertexNN_->clear();
+                HvertexNN_.reset();
             }
 
             // The various calculations and tracked values, same as in the header
@@ -309,7 +323,7 @@ namespace ompl
             }
         }
 
-        void biBITstar::ImplicitGraph::nearestVertices(const VertexPtr &vertex, VertexPtrVector *neighbourVertices)
+        void biBITstar::ImplicitGraph::nearestVertices(const VertexPtr &vertex, VertexPtrVector *neighbourVertices, bool isG)
         {
             ASSERT_SETUP
 
@@ -318,11 +332,40 @@ namespace ompl
 
             if (useKNearest_)
             {
-                vertexNN_->nearestK(vertex, k_, *neighbourVertices);
+                if(isG){
+                    GvertexNN_->nearestK(vertex, k_, *neighbourVertices);
+                }
+                else{
+                    HvertexNN_->nearestK(vertex, k_, *neighbourVertices);
+                }
             }
             else
             {
-                vertexNN_->nearestR(vertex, r_, *neighbourVertices);
+                OMPL_ERROR("Doesn't supprot R-d tree right now.");
+                //vertexNN_->nearestR(vertex, r_, *neighbourVertices);
+            }
+        }
+
+        biBITstar::VertexPtr biBITstar::ImplicitGraph::nearestVertex(const biBITstar::VertexPtr &vertex, bool isG)
+        {
+            ASSERT_SETUP
+            ++numNearestNeighbours_;
+            biBITstar::VertexPtrVector neighbourVertices = std::vector<biBITstar::VertexPtr>();
+
+            if (useKNearest_)
+            {
+                if(isG){
+                    GvertexNN_->nearestK(vertex, 1u, neighbourVertices);
+                }
+                else{
+                    HvertexNN_->nearestK(vertex, 1u, neighbourVertices);
+                }
+                return neighbourVertices[0];
+            }
+            else
+            {
+                OMPL_ERROR("Doesn't supprot R-d tree right now.");
+                //vertexNN_->nearestR(vertex, r_, *neighbourVertices);
             }
         }
 
@@ -350,14 +393,14 @@ namespace ompl
             // No else.
 
             // Add vertices
-            if (static_cast<bool>(vertexNN_))
+            if (static_cast<bool>(GvertexNN_))
             {
                 // Variables:
                 // The vector of vertices in the graph:
                 VertexPtrVector vertices;
 
                 // Get the vector of vertices
-                vertexNN_->list(vertices);
+                GvertexNN_->list(vertices);
 
                 // Iterate through it turning each into a vertex with an edge:
                 for (const auto &vertex : vertices)
@@ -379,7 +422,38 @@ namespace ompl
                     }
                 }
             }
+            if (static_cast<bool>(HvertexNN_))
+            {
+                // Variables:
+                // The vector of vertices in the graph:
+                VertexPtrVector vertices;
+
+                // Get the vector of vertices
+                HvertexNN_->list(vertices);
+
+                // Iterate through it turning each into a vertex with an edge:
+                for (const auto &vertex : vertices)
+                {
+                    // Is the vertex the root?
+                    if (vertex->isRoot())
+                    {
+                        // Yes, add as a goal vertex:
+                        data.addGoalVertex(ompl::base::PlannerDataVertex(vertex->stateConst()));
+                    }
+                    else
+                    {
+                        // No, add as a regular vertex:
+                        data.addVertex(ompl::base::PlannerDataVertex(vertex->stateConst()));
+
+                        // And as an incoming edge
+                        data.addEdge(ompl::base::PlannerDataVertex(vertex->getParentConst()->stateConst()),
+                                     ompl::base::PlannerDataVertex(vertex->stateConst()));
+                    }
+                }
+            }
             // No else.
+
+            // TODO: connEdges
         }
 
         void biBITstar::ImplicitGraph::hasSolution(const ompl::base::Cost &solnCost)
@@ -396,9 +470,9 @@ namespace ompl
             closestDistToGoal_ = std::numeric_limits<double>::infinity();
             closestVertexToGoal_.reset();
         }
-
-        void biBITstar::ImplicitGraph::updateStartAndGoalStates(ompl::base::PlannerInputStates &pis,
-                                                              const base::PlannerTerminationCondition &ptc)
+        // just one start and one end
+        void biBITstar::ImplicitGraph::updateStartAndGoalStates(ompl::base::PlannerInputStates &pis)//,
+                                                              //const base::PlannerTerminationCondition &ptc)
         {
             ASSERT_SETUP
 
@@ -407,20 +481,21 @@ namespace ompl
             bool addedGoal = false;
             bool addedStart = false;
             // Whether we have to rebuid the queue, i.e.. whether we've called updateStartAndGoalStates before
-            bool rebuildQueue = false;
+            //bool rebuildQueue = false;
 
-            /*
-            Add the new starts and goals to the vectors of said vertices. Do goals first, as they are only added as
-            samples. We do this as nested conditions so we always call nextGoal(ptc) at least once (regardless of
-            whether there are moreGoalStates or not) in case we have been given a non trivial PTC that wants us to wait,
-            but do *not* call it again if there are no more goals (as in the nontrivial PTC case, doing so would cause
-            us to wait out the ptc and never try to solve anything)
-            */
-            do
-            {
+            
+            // Add the new starts and goals to the vectors of said vertices. Do goals first, as they are only added as
+            // samples. We do this as nested conditions so we always call nextGoal(ptc) at least once (regardless of
+            // whether there are moreGoalStates or not) in case we have been given a non trivial PTC that wants us to wait,
+            // but do *not* call it again if there are no more goals (as in the nontrivial PTC case, doing so would cause
+            // us to wait out the ptc and never try to solve anything)
+            
+            //do
+            //{
                 // Variable
                 // A new goal pointer, if there are none, it will be a nullptr.
                 // We will wait for the duration of PTC for a new goal to appear.
+                base::PlannerTerminationCondition ptc = base::plannerAlwaysTerminatingCondition();
                 const ompl::base::State *newGoal = pis.nextGoal(ptc);
 
                 // Check if it's valid
@@ -428,32 +503,32 @@ namespace ompl
                 {
                     // It is valid and we are adding a goal, we will need to rebuild the queue if any starts have
                     // previously been added as their (and any descendents') heuristic cost-to-go may change:
-                    rebuildQueue = (!startVertices_.empty());
+                    //rebuildQueue = (!startVertices_.empty());
 
                     // Allocate the vertex pointer
-                    goalVertices_.push_back(std::make_shared<Vertex>(si_, costHelpPtr_));
+                    goalVertex_=std::make_shared<Vertex>(si_, costHelpPtr_,true,false);
 
                     // Copy the value into the state
-                    si_->copyState(goalVertices_.back()->state(), newGoal);
+                    si_->copyState(goalVertex_->state(), newGoal);
 
                     // And add this goal to the set of samples:
-                    this->addSample(goalVertices_.back());
+                    //this->addSample(goalVertex_);
 
                     // Mark that we've added:
                     addedGoal = true;
                 }
                 // No else, there was no goal.
-            } while (pis.haveMoreGoalStates());
+            //} while (pis.haveMoreGoalStates());
 
-            /*
-            And then do the same for starts. We do this last as the starts are added to the queue, which uses a cost-to-go
-            heuristic in it's ordering, and for that we want all the goals updated.
-            As there is no way to wait for new *start* states, this loop can be cleaner
-            There is no need to rebuild the queue when we add start vertices, as the queue is ordered on current
-            cost-to-come, and adding a start doesn't change that.
-            */
-            while (pis.haveMoreStartStates())
-            {
+            
+            // And then do the same for starts. We do this last as the starts are added to the queue, which uses a cost-to-go
+            // heuristic in it's ordering, and for that we want all the goals updated.
+            // As there is no way to wait for new *start* states, this loop can be cleaner
+            // There is no need to rebuild the queue when we add start vertices, as the queue is ordered on current
+            // cost-to-come, and adding a start doesn't change that.
+            
+            //while (pis.haveMoreStartStates())
+            //{
                 // Variable
                 // A new start pointer, if  PlannerInputStates finds that it is invalid we will get a nullptr.
                 const ompl::base::State *newStart = pis.nextStart();
@@ -462,21 +537,18 @@ namespace ompl
                 if (static_cast<bool>(newStart))
                 {
                     // Allocate the vertex pointer:
-                    startVertices_.push_back(std::make_shared<Vertex>(si_, costHelpPtr_, true));
+                    startVertex_ = std::make_shared<Vertex>(si_, costHelpPtr_, true,true);
 
                     // Copy the value into the state:
-                    si_->copyState(startVertices_.back()->state(), newStart);
-
-                    // Add this start vertex to the queue. It is not a sample, so skip that step:
-                    queuePtr_->enqueueVertex(startVertices_.back(), false);
+                    si_->copyState(startVertex_->state(), newStart);
 
                     // Mark that we've added:
                     addedStart = true;
                 }
                 // No else, there was no start.
-            }
+            //}
 
-            // Now, if we added a new start and have previously pruned goals, we may want to readd them.
+            /*// Now, if we added a new start and have previously pruned goals, we may want to readd them.
             if (addedStart && !prunedGoalVertices_.empty())
             {
                 // Variable
@@ -644,11 +716,21 @@ namespace ompl
                 }
             }
             // No else, why were we called?
+*/
+            if(static_cast<bool>(startVertex_) && static_cast<bool>(goalVertex_)){
+                    
+                queuePtr_->enqueueVertex(startVertex_, false, true);
+                queuePtr_->enqueueVertex(goalVertex_, false, false);
 
-            // Make sure that if we have a goal, we also have a start, since there's no way to wait for more *starts*
-            if (!goalVertices_.empty() && startVertices_.empty())
+                minCost_ = costHelpPtr_->costToGoHeuristic(startVertex_);
+
+                sampler_ = costHelpPtr_->getOptObj()->allocInformedStateSampler(
+                    pdef_, std::numeric_limits<unsigned int>::max());
+
+            }
+            else
             {
-                OMPL_WARN("%s (ImplicitGraph): The problem has a goal but not a start. BIT* cannot find a solution "
+                OMPL_ERROR("%s (ImplicitGraph): The problem has a goal but not a start. BIT* cannot find a solution "
                           "since PlannerInputStates provides no method to wait for a valid _start_ state to appear.",
                           nameFunc_().c_str());
             }
@@ -718,7 +800,7 @@ namespace ompl
             approximationMeasure_ = prunedMeasure;
 
             // Prune the starts/goals
-            numPruned = numPruned + this->pruneStartsGoals();
+            //numPruned = numPruned + this->pruneStartsGoals();
 
             // Prune the samples
             numPruned.second = numPruned.second + this->pruneSamples();
@@ -777,7 +859,7 @@ namespace ompl
             sampleToDelete->markPruned();
         }
 
-        void biBITstar::ImplicitGraph::addVertex(const VertexPtr &newVertex, bool removeFromFree)
+        void biBITstar::ImplicitGraph::addVertex(const VertexPtr &newVertex, bool removeFromFree, bool isG)
         {
             ASSERT_SETUP
 
@@ -801,7 +883,10 @@ namespace ompl
             // No else
 
             // Add to the NN structure:
-            vertexNN_->add(newVertex);
+            if(isG)
+                GvertexNN_->add(newVertex);
+            else
+                HvertexNN_->add(newVertex);
 
             // Update the nearest vertex to the goal (if tracking)
             if (!hasExactSolution_ && findApprox_)
@@ -837,7 +922,11 @@ namespace ompl
             ++numVerticesDisconnected_;
 
             // Remove from the nearest-neighbour structure
-            vertexNN_->remove(vertexToDelete);
+            if(vertexToDelete->isGtree())
+                GvertexNN_->remove(vertexToDelete);
+            else
+                HvertexNN_->remove(vertexToDelete);
+            
 
             // Add back as sample, if that would be beneficial
             if (moveToFree && !queuePtr_->samplePruneCondition(vertexToDelete))
@@ -980,7 +1069,8 @@ namespace ompl
             // No else, the samples are up to date
         }
 
-        void biBITstar::ImplicitGraph::findVertexClosestToGoal()
+// TODO doesn't support approximate solution right now
+       /*  void biBITstar::ImplicitGraph::findVertexClosestToGoal()
         {
             if (static_cast<bool>(vertexNN_))
             {
@@ -999,8 +1089,8 @@ namespace ompl
             }
             // No else, I do nothing.
         }
-
-        std::pair<unsigned int, unsigned int> biBITstar::ImplicitGraph::pruneStartsGoals()
+*/
+    /*     std::pair<unsigned int, unsigned int> biBITstar::ImplicitGraph::pruneStartsGoals()
         {
             // Variable
             // The number of starts/goals disconnected from the tree/pruned
@@ -1145,7 +1235,7 @@ namespace ompl
             // Return the amount of work done
             return numPruned;
         }
-
+*/
         unsigned int biBITstar::ImplicitGraph::pruneSamples()
         {
             // Variable:
@@ -1247,14 +1337,14 @@ namespace ompl
             else
             {
                 // We are not, so then all vertices and samples are uniform, use that
-                N = vertexNN_->size() + freeStateNN_->size();
+                N = GvertexNN_->size() + HvertexNN_->size() + freeStateNN_->size();
             }
 
             // If this is the first batch, we will be calculating the connection limits from only the starts and goals
             // for an RGG with m samples. That will be a complex graph. In this case, let us calculate the connection
             // limits considering the samples about to be generated. Doing so is equivalent to setting an upper-bound on
             // the radius, which RRT* does with it's min(maxEdgeLength, RGG-radius).
-            if (N == (startVertices_.size() + goalVertices_.size()))
+            if (N == 2u)//(startVertices_.size() + goalVertices_.size()))
             {
                 N = N + samplesInThisBatch_;
             }
@@ -1350,14 +1440,14 @@ namespace ompl
         // Boring sets/gets (Public):
         bool biBITstar::ImplicitGraph::hasAStart() const
         {
-            return (!startVertices_.empty());
+            return (static_cast<bool>(startVertex_));
         }
 
         bool biBITstar::ImplicitGraph::hasAGoal() const
         {
-            return (!goalVertices_.empty());
+            return (static_cast<bool>(goalVertex_));
         }
-
+/*
         biBITstar::VertexPtrVector::const_iterator biBITstar::ImplicitGraph::startVerticesBeginConst() const
         {
             return startVertices_.cbegin();
@@ -1377,7 +1467,7 @@ namespace ompl
         {
             return goalVertices_.cend();
         }
-
+ */
         ompl::base::Cost biBITstar::ImplicitGraph::minCost() const
         {
             return minCost_;
@@ -1536,31 +1626,35 @@ namespace ompl
 
         void biBITstar::ImplicitGraph::setTrackApproximateSolutions(bool findApproximate)
         {
-            // Is the flag changing?
-            if (findApproximate != findApprox_)
-            {
-                // Store the flag
-                findApprox_ = findApproximate;
-
-                // Check if we are enabling or disabling approximate solution support
-                if (!findApprox_)
-                {
-                    // We're turning it off, clear the approximate solution variables:
-                    closestDistToGoal_ = std::numeric_limits<double>::infinity();
-                    closestVertexToGoal_.reset();
-                }
-                else
-                {
-                    // We are turning it on, do we have an exact solution?
-                    if (!hasExactSolution_)
-                    {
-                        // We don't, find our current best approximate solution:
-                        this->findVertexClosestToGoal();
-                    }
-                    // No else, exact is better than approximate.
-                }
+            if(findApproximate){
+                OMPL_ERROR("Doesn't support approximate solution right now!");
+                return;
             }
-            // No else, no change.
+            // // Is the flag changing?
+            // if (findApproximate != findApprox_)
+            // {
+            //     // Store the flag
+            //     findApprox_ = findApproximate;
+
+            //     // Check if we are enabling or disabling approximate solution support
+            //     if (!findApprox_)
+            //     {
+            //         // We're turning it off, clear the approximate solution variables:
+            //         closestDistToGoal_ = std::numeric_limits<double>::infinity();
+            //         closestVertexToGoal_.reset();
+            //     }
+            //     else
+            //     {
+            //         // We are turning it on, do we have an exact solution?
+            //         if (!hasExactSolution_)
+            //         {
+            //             // We don't, find our current best approximate solution:
+            //             this->findVertexClosestToGoal();
+            //         }
+            //         // No else, exact is better than approximate.
+            //     }
+            // }
+            // // No else, no change.
         }
 
         bool biBITstar::ImplicitGraph::getTrackApproximateSolutions() const
@@ -1583,7 +1677,8 @@ namespace ompl
             {
                 // The problem isn't setup yet, create NN structs of the specified type:
                 freeStateNN_ = std::make_shared<NN<VertexPtr>>();
-                vertexNN_ = std::make_shared<NN<VertexPtr>>();
+                GvertexNN_ = std::make_shared<NN<VertexPtr>>();
+                HvertexNN_ = std::make_shared<NN<VertexPtr>>();
             }
         }
 
@@ -1594,7 +1689,15 @@ namespace ompl
 
         unsigned int biBITstar::ImplicitGraph::numConnectedVertices() const
         {
-            return vertexNN_->size();
+            return GvertexNN_->size() + HvertexNN_->size();
+        }
+        unsigned int biBITstar::ImplicitGraph::numConnectedVerticesG() const
+        {
+            return GvertexNN_->size();
+        }
+        unsigned int biBITstar::ImplicitGraph::numConnectedVerticesH() const
+        {
+            return HvertexNN_->size();
         }
 
         unsigned int biBITstar::ImplicitGraph::numStatesGenerated() const

@@ -149,6 +149,38 @@ namespace ompl
             return this->isRoot() || this->hasParent();
         }
 
+        
+        bool biBITstar::Vertex::isGtree() const
+        {
+            ASSERT_NOT_PRUNED
+            if(!this->isInTree()){
+                OMPL_ERROR("vertex is not in tree! please check in-tree vertex's gh!");
+            }
+
+            return this->isGtree_;
+        }
+        bool biBITstar::Vertex::isConn2Another() const
+        {
+            ASSERT_NOT_PRUNED
+
+            return this->isConn2_;
+        }
+        bool biBITstar::Vertex::hasBeenExpandedToAnotherTree() const
+        {
+            ASSERT_NOT_PRUNED
+
+            return this->hasBeenExpandedToAnotherTree_;
+        }
+        void biBITstar::Vertex::markAsExpandedToAnotherTree(){
+            ASSERT_NOT_PRUNED
+            this->hasBeenExpandedToAnotherTree_ = true;
+        }
+        void biBITstar::Vertex::markAsConn2Another(bool conn/*= true */){
+            ASSERT_NOT_PRUNED
+            this->isConn2_ = conn;
+        }
+        
+
         unsigned int biBITstar::Vertex::getDepth() const
         {
             ASSERT_NOT_PRUNED
@@ -226,6 +258,9 @@ namespace ompl
 
             // Store the parent
             parentSPtr_ = newParent;
+
+            /////
+            isGtree_ = newParent->isGtree();
 
             // Store the edge cost
             edgeCost_ = edgeInCost;
