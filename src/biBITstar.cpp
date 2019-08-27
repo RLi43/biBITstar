@@ -70,7 +70,7 @@
 #include "../datastructures/SearchQueue.h"
 
 #ifdef BIBITSTAR_DEBUG
-    #warning Compiling BIT* with debug-level asserts
+    #warning Compiling biBIT* with debug-level asserts
 #endif  // BIBITSTAR_DEBUG
 
 namespace ompl
@@ -83,7 +83,7 @@ namespace ompl
           : ompl::base::Planner(si, name)
         {
 #ifdef BIBITSTAR_DEBUG
-            OMPL_WARN("%s: Compiled with debug-level asserts.", Planner::getName().c_str());
+            OMPL_DEBUG("%s: Compiled with debug-level asserts.", Planner::getName().c_str());
 #endif  // BIBITSTAR_DEBUG
 
             // Allocate my helper classes, they hold settings and must never be deallocated. Give them a pointer to my
@@ -235,7 +235,7 @@ namespace ompl
                 // See if we have an optimization objective
                 if (!Planner::pdef_->hasOptimizationObjective())
                 {
-                    OMPL_INFORM("%s: No optimization objective specified. Defaulting to optimizing path length.",
+                    /*info */OMPL_DEBUG("%s: No optimization objective specified. Defaulting to optimizing path length.",
                                 Planner::getName().c_str());
                     Planner::pdef_->setOptimizationObjective(
                         std::make_shared<base::PathLengthOptimizationObjective>(Planner::si_));
@@ -333,7 +333,7 @@ namespace ompl
             }
             // No else
 
-            OMPL_INFORM("%s: Searching for a solution to the given planning problem.", Planner::getName().c_str());
+            /*info */OMPL_DEBUG("%s: Searching for a solution to the given planning problem.", Planner::getName().c_str());
 
             // Reset the manual stop to the iteration loop:
             stopLoop_ = false;
@@ -351,7 +351,7 @@ namespace ompl
             {
                 OMPL_ERROR("no start.");
                 // We don't have a start, since there's no way to wait for one to appear, so we will not be solving this "problem" today
-                OMPL_WARN("%s: A solution cannot be found as no valid start states are available.", Planner::getName().c_str());
+                OMPL_DEBUG("%s: A solution cannot be found as no valid start states are available.", Planner::getName().c_str());
             }
             // No else, it's a start
 
@@ -359,7 +359,7 @@ namespace ompl
             if (!graphPtr_->hasAGoal())
             {
                 // We don't have a goal (and we waited as long as ptc allowed us for one to appear), so we will not be solving this "problem" today
-                OMPL_WARN("%s: A solution cannot be found as no valid goal states are available.", Planner::getName().c_str());
+                OMPL_DEBUG("%s: A solution cannot be found as no valid goal states are available.", Planner::getName().c_str());
             }
             // No else, there's a goal to all of this
 
@@ -377,6 +377,14 @@ namespace ompl
                     Planner::pis_.haveMoreStartStates() || Planner::pis_.haveMoreGoalStates()))
             {
                 this->iterate();
+#ifdef BIBITSTAR_DEBUG
+                OMPL_DEBUG("iterate %d", numIterations_);
+                OMPL_DEBUG("totally vertex num: %d, H: %d, G: %d; sample num: %d."
+                        ,graphPtr_->numConnectedVertices(), graphPtr_->numConnectedVerticesH(), graphPtr_->numConnectedVerticesG(),
+                        graphPtr_->numFreeSamples());
+                OMPL_DEBUG("queue: edge: %d, vertex: %d",queuePtr_->numEdges(),queuePtr_->numVertices());
+                queuePtr_->printInfo();
+#endif
             }
 
             // Announce
@@ -521,16 +529,38 @@ namespace ompl
 
                 // Pop the minimum edge
                 queuePtr_->popFrontEdge(&bestEdge);
-
+#ifdef BIBITSTAR_DEBUG
+                // edge debug:
+                OMPL_DEBUG("check top edge...");
+                VertexPtr v1 = bestEdge.first;
+                VertexPtr v2 = bestEdge.second;
+                OMPL_DEBUG("edge debug:(id,Gtree,cost) (%d,%d,%f) -->(%d,%d,%f)",
+                            v1->getId(), v1->isGtree(), v1->getCost().value(),
+                            v2->getId(), v2->isInTree()?v2->isGtree():-1, v2->isInTree()?v2->getCost().value():-1);
+                OMPL_DEBUG("(%f,%f)->(%f,%f)",
+                    v1->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],v1->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[1],
+                    v2->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],v2->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[1]);
+#endif
                 // In the best case, can this edge improve our solution given the current graph?
                 // g_t(v) + c_hat(v,x) + h_hat(x) < g_t(x_g)?
                 if (costHelpPtr_->isCostBetterThan(costHelpPtr_->currentHeuristicEdge(bestEdge), bestCost_))
                 {
+                    bool anotherTree = bestEdge.second->isInTree() && (bestEdge.second->isGtree() != bestEdge.first->isGtree());
+                    if(anotherTree){
+                        //prune?
+                    }
+                    else{
                     // What about improving the current graph?
                     // g_t(v) + c_hat(v,x)  < g_t(x)?
-                    if (costHelpPtr_->isCostBetterThan(costHelpPtr_->currentHeuristicToTarget(bestEdge),
-                                                       bestEdge.second->getCost()))
-                    {
+                        if (!costHelpPtr_->isCostBetterThan(costHelpPtr_->currentHeuristicToTarget(bestEdge),
+                                                        bestEdge.second->getCost()))
+                                                        {
+#ifdef BIBITSTAR_DEBUG
+                                                            OMPL_DEBUG("can't improve graph");
+                                                            return;
+#endif
+                                                        }
+                    }
                         // Ok, so it *could* be a useful edge. Do the work of calculating its cost for real
 
                         // Variables:
@@ -543,17 +573,38 @@ namespace ompl
                         // Can this actual edge ever improve our solution?
                         // g_hat(v) + c(v,x) + h_hat(x) < g_t(x_g)?
                         if (costHelpPtr_->isCostBetterThan(
-                                costHelpPtr_->combineCosts(costHelpPtr_->costToComeHeuristic(bestEdge.first),
-                                                           trueEdgeCost,
-                                                           costHelpPtr_->costToGoHeuristic(bestEdge.second)),
+                                // costHelpPtr_->combineCosts(costHelpPtr_->costToComeHeuristic(bestEdge.first),
+                                //                         trueEdgeCost,
+                                //                         costHelpPtr_->costToGoHeuristic(bestEdge.second)),
+                                costHelpPtr_->combineCosts(costHelpPtr_->biConnectCostHeuristic(bestEdge),
+                                    trueEdgeCost),
                                 bestCost_))
                         {
                             // Does this edge have a collision?
                             if (this->checkEdge(bestEdge))
                             {
+
+#ifdef BIBITSTAR_DEBUG
+            OMPL_DEBUG("new edge collision free...");
+#endif
+                                if(anotherTree){
+
+                    // Make sure I am not already connected with it
+                    if(bestEdge.first->isConn2Another() && bestEdge.second->isConn2Another()){
+                        for (ConnEdge ce : graphPtr_->conn2TreesVector){
+                            if(ce.first->getId() == bestEdge.first->getId() && ce.second->getId() == bestEdge.second->getId())
+                                return;
+                            if(ce.first->getId() == bestEdge.second->getId() && ce.second->getId() == bestEdge.first->getId())
+                                return;
+                        }
+                    }
+                    // prune?
+                                    this->addEdge(bestEdge,trueEdgeCost);
+                                    
+                                }
                                 // Does the current edge improve our graph?
                                 // g_t(v) + c(v,x) < g_t(x)?
-                                if (costHelpPtr_->isCostBetterThan(
+                                else if (costHelpPtr_->isCostBetterThan(
                                         costHelpPtr_->combineCosts(bestEdge.first->getCost(), trueEdgeCost),
                                         bestEdge.second->getCost()))
                                 {
@@ -579,8 +630,6 @@ namespace ompl
                             // No else, we failed
                         }
                         // No else, we failed
-                    }
-                    // No else, we failed
                 }
                 else
                 {
@@ -593,6 +642,9 @@ namespace ompl
 
         void biBITstar::newBatch()
         {
+#ifdef BIBITSTAR_DEBUG
+            OMPL_DEBUG("newBatch...");
+#endif
             // Info:
             ++numBatches_;
 
@@ -641,7 +693,7 @@ namespace ompl
                      relativeMeasure > pruneFraction_) ||
                     (!graphPtr_->hasInformedMeasure()))
                 {
-                    OMPL_INFORM("%s: Pruning the planning problem from a solution of %.4f to %.4f, changing the "
+                    /*info */OMPL_DEBUG("%s: Pruning the planning problem from a solution of %.4f to %.4f, changing the "
                                 "problem size from %.4f to %.4f.",
                                 Planner::getName().c_str(), prunedCost_.value(), bestCost_.value(), prunedMeasure_,
                                 informedMeasure);
@@ -662,7 +714,7 @@ namespace ompl
                     // And the measure:
                     prunedMeasure_ = informedMeasure;
 
-                    OMPL_INFORM("%s: Pruning disconnected %d vertices from the tree and completely removed %d samples.",
+                    /*info */OMPL_DEBUG("%s: Pruning disconnected %d vertices from the tree and completely removed %d samples.",
                                 Planner::getName().c_str(), numPruned.first, numPruned.second);
                 }
                 // No else, it's not worth the work to prune...
@@ -846,11 +898,19 @@ namespace ompl
             if(newEdge.second->isInTree()){
                 if(newEdge.first->isGtree() == newEdge.second->isGtree()){
                     // rewiring
+
+#ifdef BIBITSTAR_DEBUG
+                    OMPL_DEBUG("rewire");
+#endif
                     this->replaceParent(newEdge, edgeCost);
                 }
                 else{
                     // new solution
                     // Mark that we have a solution
+
+#ifdef BIBITSTAR_DEBUG
+                    OMPL_DEBUG("new solution.");
+#endif
                     hasExactSolution_ = true;
                     graphPtr_->conn2TreesVector.push_back(newEdge);
 
@@ -892,6 +952,7 @@ namespace ompl
             else{
                 // to free sample, we just add the vertex
 #ifdef BIBITSTAR_DEBUG
+                OMPL_DEBUG("free sample add in");
                 graphPtr_->assertValidSample(newEdge.second, false);
 #endif  // BIBITSTAR_DEBUG
                 // Add a parent to the child, updating descendant costs:
@@ -1038,7 +1099,7 @@ namespace ompl
 
         void biBITstar::goalMessage() const
         {
-            OMPL_INFORM("%s (%u iters): Found a solution of cost %.4f (%u vertices) from %u samples by processing %u "
+            /*info */OMPL_DEBUG("%s (%u iters): Found a solution of cost %.4f (%u vertices) from %u samples by processing %u "
                         "edges (%u collision checked) to create %u vertices and perform %u rewirings. The graph "
                         "currently has %u vertices.",
                         Planner::getName().c_str(), numIterations_, bestCost_, bestLength_,
@@ -1048,7 +1109,7 @@ namespace ompl
 
         void biBITstar::endSuccessMessage() const
         {
-            OMPL_INFORM("%s: Finished with a solution of cost %.4f (%u vertices) found from %u samples by processing "
+            /*info */OMPL_DEBUG("%s: Finished with a solution of cost %.4f (%u vertices) found from %u samples by processing "
                         "%u edges (%u collision checked) to create %u vertices and perform %u rewirings. The final "
                         "graph has %u vertices.",
                         Planner::getName().c_str(), bestCost_, bestLength_, graphPtr_->numStatesGenerated(),
@@ -1060,7 +1121,7 @@ namespace ompl
         {
             if (graphPtr_->getTrackApproximateSolutions())
             {
-                OMPL_INFORM("%s (%u iters): Did not find an exact solution from %u samples after processing %u edges "
+                /*info */OMPL_DEBUG("%s (%u iters): Did not find an exact solution from %u samples after processing %u edges "
                             "(%u collision checked) to create %u vertices and perform %u rewirings. The final graph "
                             "has %u vertices. The best approximate solution was %.4f from the goal and has a cost of "
                             "%.4f.",
@@ -1071,7 +1132,7 @@ namespace ompl
             }
             else
             {
-                OMPL_INFORM("%s (%u iters): Did not find an exact solution from %u samples after processing %u edges "
+                /*info */OMPL_DEBUG("%s (%u iters): Did not find an exact solution from %u samples after processing %u edges "
                             "(%u collision checked) to create %u vertices and perform %u rewirings. The final graph "
                             "has %u vertices.",
                             Planner::getName().c_str(), numIterations_, graphPtr_->numStatesGenerated(),
@@ -1131,11 +1192,11 @@ namespace ompl
                 }
                 else if (msgLevel == ompl::msg::LOG_INFO)
                 {
-                    OMPL_INFORM("%s: ", outputStream.str().c_str());
+                    /*info */OMPL_DEBUG("%s: ", outputStream.str().c_str());
                 }
                 else if (msgLevel == ompl::msg::LOG_WARN)
                 {
-                    OMPL_WARN("%s: ", outputStream.str().c_str());
+                    OMPL_DEBUG("%s: ", outputStream.str().c_str());
                 }
                 else if (msgLevel == ompl::msg::LOG_ERROR)
                 {
@@ -1210,7 +1271,7 @@ namespace ompl
         {
             if (!prune)
             {
-                OMPL_WARN("%s: Turning pruning off has never really been tested.", Planner::getName().c_str());
+                OMPL_DEBUG("%s: Turning pruning off has never really been tested.", Planner::getName().c_str());
             }
 
             // Store
@@ -1301,7 +1362,7 @@ namespace ompl
             // change them:
             if (Planner::setup_)
             {
-                OMPL_WARN("%s: The nearest neighbour datastructures cannot be changed once the planner is setup. "
+                OMPL_DEBUG("%s: The nearest neighbour datastructures cannot be changed once the planner is setup. "
                           "Continuing to use the existing containers.",
                           Planner::getName().c_str());
             }

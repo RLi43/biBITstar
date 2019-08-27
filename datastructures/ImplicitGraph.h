@@ -84,6 +84,12 @@ namespace ompl
 
             //////////////////
             // Graph access:
+
+            
+            const ompl::base::SpaceInformationPtr getSpaceInformation()const{
+                return si_;
+            };
+
             /** \brief Gets whether the graph contains a start or not. */
             bool hasAStart() const;
 
@@ -121,7 +127,7 @@ namespace ompl
             /** \brief Get the nearest samples from the vertexNN_ using the appropriate "near" definition (i.e., k or
              * r). */
             void nearestVertices(const VertexPtr &vertex, VertexPtrVector *neighbourVertices, bool isG);
-            VertexPtr nearestVertex(const VertexPtr &target, bool isG);
+            VertexPtr nearestVertex(const VertexConstPtr &target, bool isG);
 
             /** \brief Adds the graph to the given PlannerData struct */
             void getGraphAsPlannerData(ompl::base::PlannerData &data) const;

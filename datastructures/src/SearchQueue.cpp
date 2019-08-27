@@ -70,6 +70,13 @@ namespace ompl
 {
     namespace geometric
     {
+#ifdef BIBITSTAR_DEBUG
+        void biBITstar::SearchQueue::printInfo(){
+            for(VertexQueueIter iter = vertexQueue_.begin(); iter!=vertexQueue_.end();iter++){
+                OMPL_DEBUG("v %d, value %f,%f",(*iter).second->getId(),(*iter).first[0].value(),(*iter).first[1].value());
+            }
+        }
+#endif
         /////////////////////////////////////////////////////////////////////////////////////////////
         // Public functions:
         biBITstar::SearchQueue::SearchQueue(NameFunc nameFunc)
@@ -152,6 +159,10 @@ namespace ompl
             ASSERT_SETUP
 
 #ifdef BIBITSTAR_DEBUG
+                OMPL_DEBUG("enqueueEdge (%d,%d), (%f,%f)->(%f,%f)",newEdge.first->getId(),newEdge.second->getId(),                
+    newEdge.first->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],newEdge.first->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[1],
+    newEdge.second->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],newEdge.second->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[1]);
+                
             // Assert that the parent vertex is in the vertex queue
             if (!newEdge.first->hasVertexQueueEntry())
             {
@@ -545,7 +556,7 @@ namespace ompl
                 // The number of vertices and samples pruned, respectively:
                 std::pair<unsigned int, unsigned int> numPruned(0u, 0u);
 
-                OMPL_INFORM("%s: Resorting %d vertices in the queue.", nameFunc_().c_str(), resortVertices_.size());
+                /*info */OMPL_DEBUG("%s: Resorting %d vertices in the queue.", nameFunc_().c_str(), resortVertices_.size());
 
                 // Variable:
 
@@ -623,7 +634,7 @@ namespace ompl
 
                 if (numPruned.first > 0u || numPruned.second > 0u)
                 {
-                    OMPL_INFORM("%s: Resorting the queue disconnected %d vertices from the tree and completely removed "
+                    /*info */OMPL_DEBUG("%s: Resorting the queue disconnected %d vertices from the tree and completely removed "
                                 "%d samples.",
                                 nameFunc_().c_str(), numPruned.first, numPruned.second);
                 }
@@ -853,6 +864,9 @@ namespace ompl
         bool biBITstar::SearchQueue::isEmpty()
         {
             ASSERT_SETUP
+#ifdef BIBITSTAR_DEBUG
+            OMPL_DEBUG("queue->isempty...edge queue size: %d", edgeQueue_.size());
+#endif
 
             // Update the queue:
             this->updateQueue();
@@ -860,6 +874,9 @@ namespace ompl
             // Expand if the edge queue is empty but the vertex queue is not:
             while (edgeQueue_.empty() && vertexToExpand_ != vertexQueue_.end())
             {
+#ifdef BIBITSTAR_DEBUG
+            OMPL_DEBUG("edgeQueue is empty but not vertex queue...");          
+#endif      
                 // Expand the next vertex, this pushes the token:
                 this->expandNextVertex();
             }
@@ -867,10 +884,15 @@ namespace ompl
             // If the edge queue is actually empty, than use this opportunity to resort any unsorted vertices
             if (edgeQueue_.empty())
             {
+#ifdef BIBITSTAR_DEBUG
+            OMPL_DEBUG("queue is empty, newBatch?...");         
+#endif       
                 this->resort();
             }
             // No else
-
+#ifdef BIBITSTAR_DEBUG
+            OMPL_DEBUG("end of queue->isempty...edge queue size: %d", edgeQueue_.size());
+#endif
             // Return whether the edge queue is empty:
             return edgeQueue_.empty();
         }
@@ -1006,6 +1028,7 @@ namespace ompl
         void biBITstar::SearchQueue::expandVertex(const VertexPtr &vertex)
         {
 #ifdef BIBITSTAR_DEBUG
+            OMPL_DEBUG("expandVertex %d",vertex->getId());
             // Assert that this vertex has no outgoing edge queue entries.
             if (vertex->hasOutgoingEdgeQueueEntries(numQueueResets_))
             {
@@ -1032,6 +1055,10 @@ namespace ompl
                 // {
                 //     // It has, which means that outgoing edges to old unconnected vertices have already been considered.
                 //     // Only add those that lead to new vertices
+
+#ifdef BIBITSTAR_DEBUG
+                    OMPL_DEBUG("neighbourSamples size: %d",neighbourSamples.size());
+#endif
                     this->enqueueSamples(vertex, neighbourSamples);
                 //}
                 /// expand to another tree
@@ -1039,7 +1066,11 @@ namespace ompl
                     VertexPtrVector anotherTreeVertices;
                     graphPtr_->nearestVertices(vertex, &anotherTreeVertices,!vertex->isGtree());
                     //TODO not really understand why post process
+                    this->processKNearest(vertex, &neighbourSamples, &anotherTreeVertices);
 
+#ifdef BIBITSTAR_DEBUG
+                    OMPL_DEBUG("anotherTreeVertices size: %d",anotherTreeVertices.size());
+#endif
                     this->enqueueVerticesToAnotherTree(vertex,anotherTreeVertices);
                 }
                 
@@ -1056,8 +1087,10 @@ namespace ompl
 
                     // Post process them:
                     this->processKNearest(vertex, &neighbourSamples, &neighbourVertices);
-                }
-                // No else
+                } // No else
+#ifdef BIBITSTAR_DEBUG
+                    OMPL_DEBUG("neighbourVertices size: %d",neighbourVertices.size());
+#endif
 
                 // If the vertex has never been expanded into possible rewiring edges *and* either we're not delaying
                 // rewiring or we have a solution, we add those rewiring candidates:
@@ -1359,15 +1392,22 @@ namespace ompl
             {
                 graphPtr_->addVertex(newVertex, removeFromFree, isG);
             }
-
+            //
+            CostDouble vertexQueueCost;
+            if(vertexQueue_.size() < 2u){
+                // add two roots' value
+                vertexQueueCost = {{costHelpPtr_->motionCostHeuristic(graphPtr_->startVertex_->stateConst(),graphPtr_->goalVertex_->stateConst()),costHelpPtr_->identityCost()}};
+            }else{
+                vertexQueueCost = this->vertexQueueValue(newVertex);
+            }
             // Insert into the order map, getting the iterator
-            vertexIter = vertexQueue_.insert(std::make_pair(this->vertexQueueValue(newVertex), newVertex));
+            vertexIter = vertexQueue_.insert(std::make_pair(vertexQueueCost, newVertex)); 
 
             // Store the iterator.
             newVertex->setVertexQueueIter(vertexIter);
 
             // Check if we are in front of the token and expand if so:
-            if (vertexQueue_.size() == 1u)
+            if (vertexQueue_.size() == 2u)
             {
                 // If the vertex queue is now of size 1, that means that this was the first vertex. Set the token to it
                 // and don't even think of expanding anything:

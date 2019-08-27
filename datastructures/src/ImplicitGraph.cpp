@@ -346,24 +346,35 @@ namespace ompl
             }
         }
 
-        biBITstar::VertexPtr biBITstar::ImplicitGraph::nearestVertex(const biBITstar::VertexPtr &vertex, bool isG)
+        biBITstar::VertexPtr biBITstar::ImplicitGraph::nearestVertex(const biBITstar::VertexConstPtr &vertex, bool isG)
         {
             ASSERT_SETUP
+#ifdef BIBITSTAR_DEBUG
+                OMPL_DEBUG("nearest vertex ...");
+#endif
             ++numNearestNeighbours_;
             biBITstar::VertexPtrVector neighbourVertices = std::vector<biBITstar::VertexPtr>();
-
+            // well it looks really akward to convert pointer in this way,
+            // but it works. -\(`_`)/- 
+            // and remind to delelte it from the k-d tree
+            const VertexPtr ver = std::make_shared<biBITstar::Vertex>(si_,costHelpPtr_);
+            si_->copyState(ver->state(),vertex->stateConst());
             if (useKNearest_)
             {
                 if(isG){
-                    GvertexNN_->nearestK(vertex, 1u, neighbourVertices);
+                    GvertexNN_->nearestK(ver, 1u, neighbourVertices);
+                    GvertexNN_->remove(ver);
                 }
                 else{
-                    HvertexNN_->nearestK(vertex, 1u, neighbourVertices);
+                    HvertexNN_->nearestK(ver, 1u, neighbourVertices);
+                    HvertexNN_->remove(ver);
                 }
                 return neighbourVertices[0];
             }
             else
             {
+                // cause we need the nearest one ... 
+                // maybe we can accept no vertex and get a infinity heuristic
                 throw ompl::Exception("Doesn't supprot R-d tree right now.");
                 //vertexNN_->nearestR(vertex, r_, *neighbourVertices);
             }
@@ -718,7 +729,7 @@ namespace ompl
             // No else, why were we called?
 */
             if(static_cast<bool>(startVertex_) && static_cast<bool>(goalVertex_)){
-                    
+
                 queuePtr_->enqueueVertex(startVertex_, false, true);
                 queuePtr_->enqueueVertex(goalVertex_, false, false);
 
@@ -1054,6 +1065,11 @@ namespace ompl
                         // Add the new state as a sample
                         this->addSample(newState);
 
+#ifdef BIBITSTAR_DEBUG
+//debug
+OMPL_DEBUG("add sample %d (%f,%f)",newState->getId()
+    ,newState->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],newState->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[1]);        
+#endif     
                         // Update the number of uniformly distributed states
                         ++numUniformStates_;
 
@@ -1550,7 +1566,7 @@ namespace ompl
             // Assure that we're not trying to enable k-nearest with JIT sampling already on
             if (useKNearest && useJustInTimeSampling_)
             {
-                OMPL_WARN("%s (ImplicitGraph): The k-nearest variant of BIT* cannot be used with JIT sampling, "
+                OMPL_DEBUG("%s (ImplicitGraph): The k-nearest variant of BIT* cannot be used with JIT sampling, "
                           "continuing to use the r-disc variant.",
                           nameFunc_().c_str());
             }
@@ -1578,7 +1594,7 @@ namespace ompl
             // Assure that we're not trying to enable k-nearest with JIT sampling already on
             if (useKNearest_ && useJit)
             {
-                OMPL_WARN("%s (ImplicitGraph): Just-in-time sampling cannot be used with the k-nearest variant of "
+                OMPL_DEBUG("%s (ImplicitGraph): Just-in-time sampling cannot be used with the k-nearest variant of "
                           "BIT*, continuing to use regular sampling.",
                           nameFunc_().c_str());
             }
@@ -1608,7 +1624,7 @@ namespace ompl
             // Make sure we're not already setup
             if (isSetup_)
             {
-                OMPL_WARN("%s (ImplicitGraph): Periodic sample removal cannot be changed once BIT* is setup. "
+                OMPL_DEBUG("%s (ImplicitGraph): Periodic sample removal cannot be changed once BIT* is setup. "
                           "Continuing to use the previous setting.",
                           nameFunc_().c_str());
             }
@@ -1669,7 +1685,7 @@ namespace ompl
             // change them:
             if (isSetup_)
             {
-                OMPL_WARN("%s (ImplicitGraph): The nearest neighbour datastructures cannot be changed once the problem "
+                OMPL_DEBUG("%s (ImplicitGraph): The nearest neighbour datastructures cannot be changed once the problem "
                           "is setup. Continuing to use the existing containers.",
                           nameFunc_().c_str());
             }

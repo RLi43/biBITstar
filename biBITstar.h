@@ -482,10 +482,10 @@ namespace ompl
             ///////////////////////////////////////////////////////////////////
             // Parameters - Set defaults in construction/setup and DO NOT reset in clear.
             /** \brief The number of samples per batch (param) */
-            unsigned int samplesPerBatch_{100u};
+            unsigned int samplesPerBatch_{10u};
 
             /** \brief Whether to use graph pruning (param) */
-            bool usePruning_{true};
+            bool usePruning_{false};
 
             /** \brief The fractional decrease in solution cost required to trigger pruning (param) */
             double pruneFraction_{0.05};

@@ -154,7 +154,7 @@ namespace ompl
         {
             ASSERT_NOT_PRUNED
             if(!this->isInTree()){
-                OMPL_ERROR("vertex is not in tree! please check in-tree vertex's gh!");
+                OMPL_ERROR("vertex %d is not in tree! please check in-tree vertex's gh!",this->vId_);
             }
 
             return this->isGtree_;

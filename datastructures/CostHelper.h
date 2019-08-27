@@ -103,7 +103,10 @@ namespace ompl
              * cost-to-go. */
             inline ompl::base::Cost lowerBoundHeuristicVertex(const VertexConstPtr &vertex) const
             {
-                return this->combineCosts(this->costToComeHeuristic(vertex), this->costToGoHeuristic(vertex));
+                return this->combineCosts(
+                    this->motionCostHeuristic(graphPtr_->startVertex_->stateConst(),vertex->stateConst()),
+                    this->motionCostHeuristic(graphPtr_->goalVertex_->stateConst(),vertex->stateConst())
+                );
             };
 
             /** \brief Calculates a heuristic estimate of the cost of a solution constrained to pass through a vertex,
@@ -112,10 +115,9 @@ namespace ompl
             inline ompl::base::Cost currentHeuristicVertex(const VertexConstPtr &ver) const
             {
                 //return this->combineCosts(vertex->getCost(), this->costToGoHeuristic(vertex));
-                const VertexPtr vertex = std::make_shared<biBITstar::Vertex>(*ver);
-                VertexPtr nearest = graphPtr_->nearestVertex(vertex,!vertex->isGtree());
-                return this->combineCosts(vertex->getCost(),
-                                            this->motionCostHeuristic(vertex->stateConst(),nearest->stateConst()),
+                const VertexPtr nearest = graphPtr_->nearestVertex(ver,!ver->isGtree());
+                return this->combineCosts(ver->getCost(),
+                                            this->motionCostHeuristic(ver->stateConst(),nearest->stateConst()),
                                             nearest->getCost());
             };
 
@@ -124,8 +126,19 @@ namespace ompl
              * cost-to-come, edge cost, and cost-to-go. */
             inline ompl::base::Cost lowerBoundHeuristicEdge(const VertexConstPtrPair &edgePair) const
             {
-                return this->combineCosts(this->lowerBoundHeuristicToTarget(edgePair),
-                                          this->costToGoHeuristic(edgePair.second));
+                if(edgePair.first->isGtree()){
+                    return this->combineCosts(this->motionCostHeuristic(graphPtr_->startVertex_->stateConst(),edgePair.first->stateConst()),
+                        this->edgeCostHeuristic(edgePair),
+                        this->motionCostHeuristic(edgePair.second->stateConst(),graphPtr_->goalVertex_->stateConst()));
+                }
+                return this->combineCosts(this->motionCostHeuristic(graphPtr_->goalVertex_->stateConst(),edgePair.first->stateConst()),
+                        this->edgeCostHeuristic(edgePair),
+                        this->motionCostHeuristic(edgePair.second->stateConst(),graphPtr_->startVertex_->stateConst()));
+                // this->combineCosts(this->lowerBoundHeuristicToTarget(edgePair),
+                //     this->motionCostHeuristic(edgePair.second->stateConst(),
+                //             (edgePair.first->isGtree()) ? 
+                //                 graphPtr_->goalVertex_->stateConst() :
+                //                 graphPtr_->startVertex_->stateConst()));
             };
 
             /** \brief Calculates a heuristic estimate of the cost of a solution constrained to go through an edge,
@@ -133,11 +146,22 @@ namespace ompl
              * estimates of the edge cost, and cost-to-go. */
             inline ompl::base::Cost currentHeuristicEdge(const VertexConstPtrPair &edgePair) const
             {
-                const VertexPtr vertex = std::make_shared<biBITstar::Vertex>(*edgePair.second);
-                VertexPtr nearest = graphPtr_->nearestVertex(vertex,!vertex->isGtree());
-                return this->combineCosts(this->currentHeuristicToTarget(edgePair),
-                                            this->motionCostHeuristic(vertex->stateConst(), nearest->stateConst()),
+                if(edgePair.second->isInTree() && edgePair.first->isGtree() != edgePair.second->isGtree()){
+                    // conn edge
+                    return this->combineCosts(edgePair.first->getCost(),this->edgeCostHeuristic(edgePair),edgePair.second->getCost());
+                }
+                // //const VertexPtr vertex = std::make_shared<biBITstar::Vertex>(*edgePair.second);
+                // VertexPtr vertex = std::make_shared<biBITstar::Vertex>(graphPtr_->getSpaceInformation(),this);
+                // graphPtr_->getSpaceInformation()->copyState(vertex->state(), edgePair.second->stateConst());
+                const VertexPtr nearest = graphPtr_->nearestVertex(edgePair.second,!edgePair.first->isGtree());
+                ompl::base::Cost cost = this->combineCosts(this->currentHeuristicToTarget(edgePair),
+                                            this->motionCostHeuristic(edgePair.second->stateConst(), nearest->stateConst()),
                                             nearest->getCost());
+#ifdef BIBITSTAR_DEBUG
+                OMPL_DEBUG("%d's nearest neighbor is %d, whose cost is %f, currentHeuristicEdge: %f",
+                            edgePair.second->getId(),nearest->getId(),nearest->getCost().value(),cost.value());
+#endif
+                return cost;
                                           //this->costToGoHeuristic(edgePair.second));
             };
 
@@ -154,7 +178,11 @@ namespace ompl
              * the edge cost. */
             inline ompl::base::Cost currentHeuristicToTarget(const VertexConstPtrPair &edgePair) const
             {
-                return this->combineCosts(edgePair.first->getCost(), this->edgeCostHeuristic(edgePair));
+                ompl::base::Cost temp = this->combineCosts(edgePair.first->getCost(), this->edgeCostHeuristic(edgePair));
+#ifdef BIBITSTAR_DEBUG
+                OMPL_DEBUG("current heuristic to target (%d, %d):%f",edgePair.first->getId(),edgePair.second->getId(),temp.value());
+#endif
+                return temp;
             };
 
             /** \brief Calculate a heuristic estimate of the cost-to-come for a Vertex */
@@ -182,8 +210,23 @@ namespace ompl
             /** \brief Calculate a heuristic estimate of the cost of an edge between two Vertices */
             inline ompl::base::Cost edgeCostHeuristic(const VertexConstPtrPair &edgePair) const
             {
-                return this->motionCostHeuristic(edgePair.first->stateConst(), edgePair.second->stateConst());
+                ompl::base::Cost temp = this->motionCostHeuristic(edgePair.first->stateConst(), edgePair.second->stateConst());
+#ifdef BIBITSTAR_DEBUG
+                OMPL_DEBUG("edge cost heuristic...(%d,%d): %f",edgePair.first->getId(),edgePair.second->getId(),temp.value());
+                OMPL_DEBUG("(%f,%f)-->(%f,%f)",
+                    edgePair.first->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],edgePair.first->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[1],
+                    edgePair.second->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[0],edgePair.second->stateConst()->as<ompl::base::RealVectorStateSpace::StateType>()->values[1]);
+#endif
+                return temp;
             };
+
+            inline ompl::base::Cost biConnectCostHeuristic(const VertexConstPtrPair &edge) const{
+                return this->combineCosts(
+                    this->costToComeHeuristic(edge.first),
+                    edge.first->isGtree()? this->motionCostHeuristic(edge.second->stateConst(),graphPtr_->goalVertex_->stateConst())
+                    : this->motionCostHeuristic(graphPtr_->startVertex_->stateConst(),edge.second->stateConst())
+                );
+            }
 
             /** \brief Calculate a heuristic estimate of the cost-to-go for a Vertex */
             inline ompl::base::Cost costToGoHeuristic(const VertexConstPtr &vertex) const

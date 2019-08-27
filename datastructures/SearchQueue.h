@@ -92,6 +92,9 @@ namespace ompl
         class biBITstar::SearchQueue
         {
         public:
+#ifdef BIBITSTAR_DEBUG
+        void printInfo();
+#endif
             ////////////////////////////////
             // Aliases to underlying data types used by the SearchQueue
             // Types for the vertex queue:

@@ -47,3 +47,6 @@ to connect two trees quickly
 
 ### prune
 TODO
+
+### depulate check edge
+TODO

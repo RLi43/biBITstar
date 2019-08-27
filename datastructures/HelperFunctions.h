@@ -40,6 +40,8 @@
 // std::pair
 #include <utility>
 
+#include "ompl/base/spaces/RealVectorStateSpace.h"
+
 ////////////////////////////////
 // Anonymous helpers
 namespace
